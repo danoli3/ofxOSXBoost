@@ -1,0 +1,9 @@
+BOOST_LIB = "$(OF_PATH)/addons/ofxOSXBoost/libs/boost/lib/osx/boost.a"
+
+BOOST_HEADER = "$(OF_PATH)/addons/ofxOSXBoost/libs/boost/include/"
+
+// Addon headers and libs for this project
+
+
+ADDONS_LIBS = $(BOOST_LIB)
+ADDONS_HEADERS = $(BOOST_HEADER)

@@ -2,6 +2,7 @@
 *.slo
 *.lo
 *.o
+*.a
 
 # Compiled Dynamic libraries
 *.so
@@ -10,4 +11,32 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
+
+
+# Do no ignore the debug folder
+!*/debug/
+!*/debug/*
+
+# Created by https://www.gitignore.io
+
+### Xcode ###
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.xcuserstate
+
+*.app
+
+*.xcscheme
+
+*.bz2

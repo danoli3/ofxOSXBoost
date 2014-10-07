@@ -1,15 +1,16 @@
-#ofxOSXBoost for Boost 1.56.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=master)
+#ofxOSXBoost for Boost 1.56.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=1.56.0-libc++)
 
 ### Boost C++ Libraries 1.56.0 Pre-compiled for OSX
 ![image](https://github.com/danoli3/ofxOSXBoost/blob/master/ofxaddons_thumbnail.png)
 
 - Addon with Boost 1.56.0 for OSX / Xcode 
+- This Branch for ```libc++``` and ```std=c++11``` 
 - Precompiled library and Command to build yourself
 - Master is currently a Fat Lib of All Standard Architectures
 - Check Branches for others or to be specific 
 - Designed for use as an open frameworks addon, however should definitely work for other OSX projects
 - Master currently built with ```libstd++``` and using ```std=c++89```
-- Branch for ```libc++``` and ```std=c++11``` (libc++)
+
 - License: See Boost License [LICENSE.MD](https://github.com/danoli3/ofxOSXBoost/blob/master/LICENSE.md)
 
 ============
@@ -37,8 +38,7 @@ If not openFrameworks just add the ``` libs/boost/include ``` to Header Search P
 
 ============
 
-### Architectures in Pre-Build Library (Fat Lib)
-See the other branches on this repository (Currently libstdc++, check branch for libc++)
+### Architectures in Pre-Build Library (Fat Lib) (libc++ / c++11)
 
 - x86_64 (64-bit intel)
 - i386 (32-bit intel)

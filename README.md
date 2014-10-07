@@ -1,4 +1,4 @@
-#ofxOSXBoost for Boost 1.56.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=1.56.0-libc++)
+#ofxOSXBoost for Boost 1.56.0  [![Build Status](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=1.56.0-libc%2B%2B)](https://travis-ci.org/danoli3/ofxOSXBoost)
 
 ### Boost C++ Libraries 1.56.0 Pre-compiled for OSX
 ![image](https://github.com/danoli3/ofxOSXBoost/blob/master/ofxaddons_thumbnail.png)

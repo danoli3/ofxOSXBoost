@@ -4,4 +4,4 @@ here="`dirname \"$0\"`"
 echo "cd-ing to $here"
 cd "$here" || exit 1
 
-./build-libstd++.sh
+./build-libstdc++.sh

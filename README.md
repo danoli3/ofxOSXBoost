@@ -8,7 +8,8 @@
 - Master is currently a Fat Lib of All Standard Architectures
 - Check Branches for others or to be specific 
 - Designed for use as an open frameworks addon, however should definitely work for other OSX projects
-- Built with clang++ and using libc++ and std=c++11
+- Master currently built with ```libstd++``` and using ```std=c++89```
+- Branch for ```libc++``` and ```std=c++11``` (libc++)
 - License: See Boost License [LICENSE.MD](https://github.com/danoli3/ofxOSXBoost/blob/master/LICENSE.md)
 
 ============
@@ -37,14 +38,10 @@ If not openFrameworks just add the ``` libs/boost/include ``` to Header Search P
 ============
 
 ### Architectures in Pre-Build Library (Fat Lib)
-See the other branches on this repository (All libc++ std=c11)
+See the other branches on this repository (Currently libstdc++, check branch for libc++)
 
 - x86_64 (64-bit intel)
 - i386 (32-bit intel)
-
-       
-
-
 
 ============
 

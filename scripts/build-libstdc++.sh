@@ -61,7 +61,7 @@ esac
 
 : ${BOOST_LIBS:="random regex graph random chrono thread signals filesystem system date_time"}
 : ${OSX_SDKVERSION:=`xcrun -sdk macosx --show-sdk-version`}
-: ${EXTRA_CPPFLAGS:="-DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -std=$CPPSTD -stdlib=$STDLIB"}
+: ${EXTRA_CPPFLAGS:="-DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=$STDLIB"}
 
 # The EXTRA_CPPFLAGS definition works around a thread race issue in
 # shared_ptr. I encountered this historically and have not verified that
@@ -222,7 +222,7 @@ buildBoostForOSX()
     echo " ${LOG}"
     echo "Please stand by..."
 
-    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-std=$CPPSTD -stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi stage > "${LOG}" 2>&1
+    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi stage > "${LOG}" 2>&1
     if [ $? != 0 ]; then 
         echo "Problem while Building osx-build stage - Please check ${LOG}"
         exit 1
@@ -236,7 +236,7 @@ buildBoostForOSX()
     echo "To see status in realtime check:"
     echo " ${LOG}"
     echo "Please stand by..."
-    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-std=$CPPSTD -stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi install > "${LOG}" 2>&1
+    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi install > "${LOG}" 2>&1
     if [ $? != 0 ]; then 
         echo "Problem while Building osx-build install - Please check ${LOG}"
         exit 1

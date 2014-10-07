@@ -9,7 +9,7 @@
 - Check Branches for others or to be specific 
 - Designed for use as an open frameworks addon, however should definitely work for other OSX projects
 - Master currently built with ```libstd++``` and using ```std=c++89```
-- Branch for ```libc++``` and ```std=c++11``` (libc++)
+- Other Branch for ```libc++``` and ```std=c++11``` ([1.56.0-libc++](https://github.com/danoli3/ofxOSXBoost/tree/1.56.0-libc++))
 - License: See Boost License [LICENSE.MD](https://github.com/danoli3/ofxOSXBoost/blob/master/LICENSE.md)
 
 ============
@@ -38,7 +38,7 @@ If not openFrameworks just add the ``` libs/boost/include ``` to Header Search P
 ============
 
 ### Architectures in Pre-Build Library (Fat Lib)
-See the other branches on this repository (Currently libstdc++, check branch for libc++)
+See the other branches on this repository (Currently libstdc++, check branch for ([1.56.0-libc++](https://github.com/danoli3/ofxOSXBoost/tree/1.56.0-libc++)))
 
 - x86_64 (64-bit intel)
 - i386 (32-bit intel)
@@ -68,5 +68,5 @@ See the other branches on this repository (Currently libstdc++, check branch for
 #### Documentation on Boost 1.56.0
 
 
-See: http://www.boost.org/users/history/version_1_56_0.html
+See: [http://www.boost.org/users/history/version_1_56_0.html](http://www.boost.org/users/history/version_1_56_0.html)
 

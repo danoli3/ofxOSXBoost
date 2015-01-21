@@ -318,36 +318,18 @@ buildIncludes()
     doneSection
 }
 
+cleanBuild() {
+    rm -rf `pwd`/../build/
+}
+
 #===============================================================================
 # Execution starts here
 #===============================================================================
 
-mkdir -p $OSXBUILDDIR
-
 cleanEverythingReadyToStart #may want to comment if repeatedly running during dev
-
-echo "BOOST_VERSION:     $BOOST_VERSION"
-echo "BOOST_LIBS:        $BOOST_LIBS"
-echo "BOOST_SRC:         $BOOST_SRC"
-echo "OSXBUILDDIR:       $OSXBUILDDIR"
-echo "PREFIXDIR:         $PREFIXDIR"
-echo "OSX_SDKVERSION:    $OSX_SDKVERSION"
-echo "XCODE_ROOT:        $XCODE_ROOT"
-echo "COMPILER:          $COMPILER"
-echo
-
-downloadBoost
-unpackBoost
-prepare
-bootstrapBoost
-updateBoost
-buildBoostForOSX
-scrunchAllLibsTogetherInOneLibPerPlatform
-buildIncludes
-
-
 postcleanEverything
+cleanBuild
 
-echo "Completed successfully"
+echo "Completed Clean successfully"
 
 #===============================================================================

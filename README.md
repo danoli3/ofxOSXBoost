@@ -1,15 +1,15 @@
-#ofxOSXBoost for Boost 1.56.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=master)
+#ofxOSXBoost for Boost 1.57.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=master)
 
-### Boost C++ Libraries 1.56.0 Pre-compiled for OSX
+### Boost C++ Libraries 1.57.0 Pre-compiled for OSX
 ![image](https://github.com/danoli3/ofxOSXBoost/blob/master/ofxaddons_thumbnail.png)
 
-- Addon with Boost 1.56.0 for OSX / Xcode 
+- Addon with Boost 1.57.0 for OSX / Xcode 
 - Precompiled library and Command to build yourself
 - Master is currently a Fat Lib of All Standard Architectures
 - Check Branches for others or to be specific 
 - Designed for use as an open frameworks addon, however should definitely work for other OSX projects
 - Master currently built with ```libstd++``` and using ```std=c++89```
-- Branch for ```libc++``` and ```std=c++11``` (libc++)
+- Alternate Branch for ```libc++``` and ```std=c++11``` (libc++)
 - License: See Boost License [LICENSE.MD](https://github.com/danoli3/ofxOSXBoost/blob/master/LICENSE.md)
 
 ============
@@ -28,8 +28,13 @@
 
 In Xcode Build Settings for your project:
 
-- Add to Library Search Paths: ``` $(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/lib/osx ```
-- Add to Header Search Paths:  ```$(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/include ```
+- Add to Library Search Paths ( ```LIBRARY_SEARCH_PATHS``` ) ```$(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/lib/osx ``` 
+- Add to Header Search Paths ( ```HEADER_SEARCH_PATHS``` )  
+```$(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/include ```
+
+In the Target under Build Phases
+
+- Add to 'Link Binary With Libraries' the ```boost.a``` found in the ```ofxOSXBoost/libs/boost/lib/osx``` directory.
 
 If not openFrameworks just add the ``` libs/boost/include ``` to Header Search Paths and the  ``` libs/boost/lib/osx ``` to Library Search Paths
 
@@ -57,16 +62,26 @@ See the other branches on this repository (Currently libstdc++, check branch for
 
 
 - Download files (suggested you download the files to addons/ofxOSXBoost for openFrameworks)
-- Double click and run scripts/build.command (this will download the 1.56.0 version of boost and begin compiling the library).
+- Double click and run scripts/build.command (this will download the 1.57.0 version of boost and begin compiling the library).
 - Once completed in the terminal continue with the next steps.
 - Add the ofxOSXBoost to your project (src and libs for your chosen architecture)
+
+
+#### Alternative Build Script:
+- Build using libc++ by running the ```scripts/build-libc++.command```
+
+#### Clean script
+- Run the clean script from ```scripts/cleanAll.command``` to remove pre-compiled code and the final built library
+
 
 
 
 ============
 
-#### Documentation on Boost 1.56.0
+#### Documentation on Boost 1.57.0
 
 
-See: http://www.boost.org/users/history/version_1_56_0.html
+See: http://www.boost.org/users/history/version_1_57_0.html
 
+
+### Version 1.57.0 (Date): 24th November 2014

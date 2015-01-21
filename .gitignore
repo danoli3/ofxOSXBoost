@@ -2,7 +2,8 @@
 *.slo
 *.lo
 *.o
-*.a
+
+# *.a # We do want this… arg!
 
 # Compiled Dynamic libraries
 *.so

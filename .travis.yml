@@ -2,4 +2,4 @@ language: objective-c
 compiler: clang
 before-script:
 script: 
- - scripts/buildlibstdc++.sh
+ - scripts/build-libstdc++.sh

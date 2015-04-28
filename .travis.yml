@@ -4,6 +4,5 @@ before-script:
 script: 
  - scripts/build-libc++.sh
  - scripts/cleanAll.sh
- - scripts/build-libstdc++.sh
- - scripts/cleanAll.sh
+
  

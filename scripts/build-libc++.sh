@@ -286,7 +286,7 @@ scrunchAllLibsTogetherInOneLibPerPlatform()
     echo ...x86_64
     (cd $OSXBUILDDIR/osx/x86_64;  $SIM_DEV_CMD ar crus libboost.a obj/*.o; )
 
-    echo "Making fat lib for iOS Boost $BOOST_VERSION"
+    echo "Making fat lib for OSX Boost $BOOST_VERSION"
     lipo -c $OSXBUILDDIR/osx/i386/libboost.a \
             $OSXBUILDDIR/osx/x86_64/libboost.a \
             -output $OUTPUT_DIR_LIB/boost.a

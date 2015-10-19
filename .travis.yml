@@ -1,14 +1,11 @@
 language: objective-c
-compiler: clang
 matrix:
-    include:
-      - os: osx
-        compiler: clang
-        env: TYPE="libc++"
-      - os: osx
-        compiler: clang
-        env: TYPE="libstdc++"
+  include:
+    - os: osx
+      env: TYPE="libc++"
+    - os: osx
+      env: TYPE="libstdc++"
 script: 
     - scripts/build-$TYPE.sh
- git:
+git:
     depth: 10

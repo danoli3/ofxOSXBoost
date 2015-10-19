@@ -25,13 +25,16 @@ cd "$here" || exit 1
 CPPSTD=c++11    #c++89, c++99, c++14
 STDLIB=libc++   # libstdc++
 COMPILER=clang++
+PARALLEL_MAKE=16   # how many threads to make boost with
 
-BOOST_V1=1.58.0
-BOOST_V2=1_58_0
+BOOST_V1=1.59.0
+BOOST_V2=1_59_0
+
+#BITCODE="-fembed-bitcode"  # Uncomment this line for Bitcode generation
 
 CURRENTPATH=`pwd`
 LOGDIR="$CURRENTPATH/build/logs/"
-
+OSX_MIN_VERSION=10.9
 OSX_SDKVERSION=`xcrun -sdk macosx --show-sdk-version`
 DEVELOPER=`xcode-select -print-path`
 XCODE_ROOT=`xcode-select -print-path`
@@ -61,7 +64,7 @@ esac
 
 : ${BOOST_LIBS:="random regex graph random chrono thread signals filesystem system date_time"}
 : ${OSX_SDKVERSION:=`xcrun -sdk macosx --show-sdk-version`}
-: ${EXTRA_CPPFLAGS:="-DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -std=$CPPSTD -stdlib=$STDLIB"}
+: ${EXTRA_CPPFLAGS:="-fPIC -DBOOST_SP_USE_SPINLOCK -std=$CPPSTD -stdlib=$STDLIB --mmacosx-version-min=$IOS_MIN_VERSION $BITCODE"}
 
 # The EXTRA_CPPFLAGS definition works around a thread race issue in
 # shared_ptr. I encountered this historically and have not verified that
@@ -222,8 +225,9 @@ buildBoostForOSX()
     echo " ${LOG}"
     echo "Please stand by..."
 
-    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-std=$CPPSTD -stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi stage > "${LOG}" 2>&1
+    ./b2 -j${PARALLEL_MAKE} --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-mmacosx-version-min=$OSX_MIN_VERSION -stdlib=$STDLIB $BITCODE -arch i386 -arch x86_64" variant=release linkflags="-stdlib=$STDLIB" linkflags="-stdlib=$STDLIB" link=static threading=multi stage > "${LOG}" 2>&1
     if [ $? != 0 ]; then 
+        tail -n 100 "${LOG}"
         echo "Problem while Building osx-build stage - Please check ${LOG}"
         exit 1
     else 
@@ -236,7 +240,7 @@ buildBoostForOSX()
     echo "To see status in realtime check:"
     echo " ${LOG}"
     echo "Please stand by..."
-    ./b2 -j16 --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-std=$CPPSTD -stdlib=$STDLIB -arch i386 -arch x86_64" linkflags="-stdlib=$STDLIB" link=static threading=multi install > "${LOG}" 2>&1
+    ./b2 -j${PARALLEL_MAKE} --build-dir=osx-build --stagedir=osx-build/stage --prefix=$PREFIXDIR toolset=clang cxxflags="-mmacosx-version-min=$OSX_MIN_VERSION -stdlib=$STDLIB $BITCODE -arch i386 -arch x86_64" variant=release linkflags="-stdlib=$STDLIB" linkflags="-stdlib=$STDLIB" link=static threading=multi install > "${LOG}" 2>&1
     if [ $? != 0 ]; then 
         echo "Problem while Building osx-build install - Please check ${LOG}"
         exit 1

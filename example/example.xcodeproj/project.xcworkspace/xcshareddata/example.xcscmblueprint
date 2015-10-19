@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "E068B5130748B8B45220364D050FFE995677D392",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "E068B5130748B8B45220364D050FFE995677D392" : 0,
+    "2DE9C8846D9375EAACFABA8963120E8E7719BAF5" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "97FBDC3B-EDBB-4DF3-B6B8-C4B57E78294F",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "E068B5130748B8B45220364D050FFE995677D392" : "ofxOSXBoost\/",
+    "2DE9C8846D9375EAACFABA8963120E8E7719BAF5" : ".."
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "example",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "example\/example.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/danoli3\/openFrameworks.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "2DE9C8846D9375EAACFABA8963120E8E7719BAF5"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/danoli3\/ofxOSXBoost.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "E068B5130748B8B45220364D050FFE995677D392"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ matrix:
     - os: osx
       env: TYPE="libstdc++"
 script: 
-    - scripts/build-$TYPE.sh
+    - scripts/build-$TYPE
 git:
     depth: 10
+

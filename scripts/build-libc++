@@ -1,3 +1,4 @@
+#!/bin/bash
 #===============================================================================
 # Filename:  boost.sh
 # Author:    Pete Goodliffe, Daniel Rosser
@@ -17,7 +18,6 @@
 # same directory as this script, and run "./boost.sh". Grab a cuppa. And voila.
 #===============================================================================
 
-#!/bin/sh
 here="`dirname \"$0\"`"
 echo "cd-ing to $here"
 cd "$here" || exit 1
@@ -64,7 +64,7 @@ esac
 
 : ${BOOST_LIBS:="random regex graph random chrono thread signals filesystem system date_time"}
 : ${OSX_SDKVERSION:=`xcrun -sdk macosx --show-sdk-version`}
-: ${EXTRA_CPPFLAGS:="-fPIC -DBOOST_SP_USE_SPINLOCK -std=$CPPSTD -stdlib=$STDLIB --mmacosx-version-min=$IOS_MIN_VERSION $BITCODE"}
+: ${EXTRA_CPPFLAGS:="-fPIC -DBOOST_SP_USE_SPINLOCK -std=$CPPSTD -stdlib=$STDLIB --mmacosx-version-min=$OSX_SDKVERSION $BITCODE"}
 
 # The EXTRA_CPPFLAGS definition works around a thread race issue in
 # shared_ptr. I encountered this historically and have not verified that
@@ -129,7 +129,7 @@ cleanEverythingReadyToStart()
     rm -rf osx-build
     rm -rf $OSXBUILDDIR
     rm -rf $PREFIXDIR
-    rm -rf $IOSINCLUDEDIR
+    rm -rf $OSXINCLUDEDIR
     rm -rf $TARBALLDIR/build
     rm -rf $LOGDIR
 

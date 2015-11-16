@@ -49,6 +49,7 @@ See the other branches on this repository (Currently libstdc++, check branch for
 
 ============
 
+
 ### How to Build?
 
 1. You don't need to. This has the pre-compiled versions of BOOST for you to use
@@ -59,19 +60,21 @@ See the other branches on this repository (Currently libstdc++, check branch for
 
 ### How to use Build Script
 
-
-- Download files (suggested you download the files to addons/ofxOSXBoost for openFrameworks)
-- Double click and run scripts/build.command (this will download the 1.59.0 version of boost and begin compiling the library).
+- Download files *(suggested you download the files to addons/ofxOSXBoost for openFrameworks)*
+- Double click and run ```scripts/build-libc++``` 
+	- (this will download the 1.59.0 version of boost and begin compiling the library).
 - Once completed in the terminal continue with the next steps.
 - Add the ofxOSXBoost to your project (src and libs for your chosen architecture)
 
+#### Build with Bitcode Embedded:
+- Build with embedded bitcode by running the ```scripts/build-libc++withBitcode```
+
 
 #### Alternative Build Script:
-- Build using libc++ by running the ```scripts/build-libc++.command```
+- Build using libstdc++ by running the ```scripts/build-libstdc++```
 
 #### Clean script
-- Run the clean script from ```scripts/cleanAll.command``` to remove pre-compiled code and the final built library
-
+- Run the clean script from ```scripts/cleanAll``` to remove pre-compiled code and the final built library
 
 
 

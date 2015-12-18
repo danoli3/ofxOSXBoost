@@ -1,9 +1,9 @@
-#ofxOSXBoost for Boost 1.59.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=master)
+#ofxOSXBoost for Boost 1.60.0  ![image](https://travis-ci.org/danoli3/ofxOSXBoost.svg?branch=master)
 
-### Boost C++ Libraries 1.59.0 Pre-compiled for OSX
+### Boost C++ Libraries 1.60.0 Pre-compiled for OSX
 ![image](https://github.com/danoli3/ofxOSXBoost/blob/master/ofxaddons_thumbnail.png)
 
-- Addon with Boost 1.59.0 for OSX / Xcode 
+- Addon with Boost 1.60.0 for OSX / Xcode 
 - Precompiled library and Command to build yourself
 - Master is currently a Fat Lib of All Standard Architectures
 - Check Branches for others or to be specific 
@@ -62,7 +62,7 @@ See the other branches on this repository (Currently libstdc++, check branch for
 
 - Download files *(suggested you download the files to addons/ofxOSXBoost for openFrameworks)*
 - Double click and run ```scripts/build-libc++``` 
-	- (this will download the 1.59.0 version of boost and begin compiling the library).
+	- (this will download the 1.60.0 version of boost and begin compiling the library).
 - Once completed in the terminal continue with the next steps.
 - Add the ofxOSXBoost to your project (src and libs for your chosen architecture)
 
@@ -80,10 +80,10 @@ See the other branches on this repository (Currently libstdc++, check branch for
 
 ============
 
-#### Documentation on Boost 1.59.0
+#### Documentation on Boost 1.60.0
 
 
-See: http://www.boost.org/users/history/version_1_59_0.html
+See: http://www.boost.org/users/history/version_1_60_0.html
 
 
-### Version 1.59.0 (Date): August 13th, 2015 15:23 GMT
+### Version 1.60.0 (Date): December 17th, 2015 15:52 GMT

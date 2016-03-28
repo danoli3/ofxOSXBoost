@@ -22,8 +22,15 @@ here="`dirname \"$0\"`"
 echo "cd-ing to $here"
 cd "$here" || exit 1
 
-CPPSTD=c++11    #c++89, c++99, c++14
-STDLIB=libc++   # libstdc++
+if [ "$LIBSTDCPP" != "" ] ; then
+    echo "Building with libstdc++ / c++99";
+    CPPSTD=c++99
+    STDLIB=libstdc++
+else
+    echo "Building with libc++ / c++11";
+    CPPSTD=c++11    #c++89, c++99, c++14
+    STDLIB=libc++   # libstdc++
+fi
 COMPILER=clang++
 PARALLEL_MAKE=16   # how many threads to make boost with
 
@@ -261,15 +268,15 @@ scrunchAllLibsTogetherInOneLibPerPlatform()
     mkdir -p $OSXBUILDDIR/osx/i386/obj
     mkdir -p $OSXBUILDDIR/osx/x86_64/obj
 
-    ALL_LIBS=""
+    ALL_LIBS=$(find osx-build/stage/lib -name "libboost_*.a" | sed -n 's/.*\(libboost_.*.a\)/\1/p' | paste -sd " " -)
 
     echo Splitting all existing fat binaries...
 
-    for NAME in $BOOST_LIBS; do
+    for NAME in $ALL_LIBS; do
         ALL_LIBS="$ALL_LIBS libboost_$NAME.a"
 
-		$OSX_DEV_CMD lipo "osx-build/stage/lib/libboost_$NAME.a" -thin i386 -o $OSXBUILDDIR/osx/i386/libboost_$NAME.a
-		$OSX_DEV_CMD lipo "osx-build/stage/lib/libboost_$NAME.a" -thin x86_64 -o $OSXBUILDDIR/osx/x86_64/libboost_$NAME.a
+		$OSX_DEV_CMD lipo "osx-build/stage/lib/$NAME.a" -thin i386 -o $OSXBUILDDIR/osx/i386/$NAME.a
+		$OSX_DEV_CMD lipo "osx-build/stage/lib/$NAME.a" -thin x86_64 -o $OSXBUILDDIR/osx/x86_64/$NAME.a
   
     done
 

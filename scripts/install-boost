@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ofxOSXBoost — install script
+# Mirrors install-boost for ofxiOSBoost, adapted for macOS.
+# Downloads a released tarball, verifies checksum, and installs
+# the macOS XCFramework to libs/boost/osx/.
+#
+# Usage:
+#     ./scripts/install-boost           # installs latest release
+#     ./scripts/install-boost 1.66.0     # specific version
+
+REQUESTED_VERSION="${1:-1.66.0}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+INSTALL_ROOT="$REPO_ROOT/libs/boost"
+TARGET="$INSTALL_ROOT/osx/boost.xcframework"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ofxosxboost-install.XXXXXX")"
+
+cleanup() { rm -rf "$WORK_DIR"; }
+trap cleanup EXIT
+
+if [[ "$REQUESTED_VERSION" == "latest" ]]; then
+  echo "Resolving latest GitHub Release"
+  release_url="$(curl --fail --location --silent --show-error \
+        --output /dev/null --write-out '%{url_effective}' \
+      https://github.com/danoli3/ofxOSXBoost/releases/latest)"
+  release_tag="${release_url##*/}"
+  BOOST_VERSION="$release_tag"
+   [[ "$release_tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+        echo "Could not determine the latest Boost release tag.">&2
+        exit 1
+     }
+else
+    BOOST_VERSION="$REQUESTED_VERSION"
+    release_tag="$BOOST_VERSION"
+fi
+
+ASSET="ofxOSXBoost-${BOOST_VERSION}.tar.gz"
+RELEASE_ROOT="https://github.com/danoli3/ofxOSXBoost/releases/download/$release_tag"
+
+echo "Downloading $release_tag"
+curl --fail --location --retry 3 "$RELEASE_ROOT/$ASSET" \
+        --output "$WORK_DIR/$ASSET"
+curl --fail --location --retry 3 \
+        "$RELEASE_ROOT/${ASSET}.sha256" \
+        --output "$WORK_DIR/${ASSET}.sha256"
+
+expected_hash="$(awk 'NR == 1 { print $1 }' "$WORK_DIR/${ASSET}.sha256")"
+actual_hash="$(shasum -a 256 "$WORK_DIR/$ASSET" | awk '{ print $1 }')"
+[[ "$actual_hash" == "$expected_hash" ]] || {
+        echo "Release checksum does not match.">&2
+        exit 1
+}
+
+tar -xzf "$WORK_DIR/$ASSET" -C "$WORK_DIR"
+SOURCE="$WORK_DIR/ofxOSXBoost-${BOOST_VERSION}/libs/boost/osx/boost.xcframework"
+[[ -d "$SOURCE" ]] || { echo "XCFramework not found in release.">&2; exit 1; }
+plutil -lint "$SOURCE/Info.plist" >/dev/null
+
+mkdir -p "$INSTALL_ROOT/osx"
+if [[ -e "$TARGET" ]]; then
+    [[ "$TARGET" == "$REPO_ROOT/libs/boost/osx/boost.xcframework" ]] || exit 1
+        rm -rf "$TARGET"
+fi
+
+cp -R "$SOURCE" "$TARGET"
+
+# Also install cmake and pkgconfig metadata
+for install_target in "$INSTALL_ROOT/cmake" "$INSTALL_ROOT/pkgconfig"; do
+    [[ ! -L "$install_target" ]] || {
+        echo "Refusing to replace symbolic link: $install_target">&2
+        exit 1
+        }
+done
+
+rm -rf "$INSTALL_ROOT/cmake" "$INSTALL_ROOT/pkgconfig"
+SOURCE_CMAKE="$WORK_DIR/ofxOSXBoost-${BOOST_VERSION}/libs/boost/cmake"
+SOURCE_PKG="$WORK_DIR/ofxOSXBoost-${BOOST_VERSION}/libs/boost/pkgconfig"
+[[ -d "$SOURCE_CMAKE" ]] && cp -R "$SOURCE_CMAKE" "$INSTALL_ROOT/"
+[[ -d "$SOURCE_PKG" ]] && cp -R "$SOURCE_PKG" "$INSTALL_ROOT/"
+
+echo "Installed Boost $BOOST_VERSION at $TARGET"

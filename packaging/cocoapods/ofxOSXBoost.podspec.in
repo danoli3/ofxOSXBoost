@@ -1,0 +1,29 @@
+# CocoaPods podspec template for macOS XCFramework
+Pod::Spec.new do |s|
+  s.name                   = "ofxOSXBoost"
+  s.version                = "@BOOST_VERSION@"
+  s.summary                = "Boost C++ libraries precompiled for macOS"
+  s.description            = <<-DESC
+Boost @BOOST_VERSION@ packaged as a static XCFramework for macOS (x86_64 + arm64).
+The package contains the complete Boost header tree and a documented selection
+of compiled Boost libraries.
+                         DESC
+  s.homepage               = "https://github.com/danoli3/ofxOSXBoost"
+  s.documentation_url      = "https://github.com/danoli3/ofxOSXBoost/releases/tag/@BOOST_VERSION@"
+  s.license                = { :type => "BSL-1.0", :file => "LICENSE.md" }
+  s.author                 = { "Danoli3" => "danoli3@gmail.com" }
+
+  s.platform               = :osx, "10.15"
+  s.cocoapods_version      = ">= 1.9"
+  s.requires_arc           = false
+  s.source                 = {
+    :http => "https://github.com/danoli3/ofxOSXBoost/releases/download/@BOOST_VERSION@/ofxOSXBoost-@BOOST_VERSION@.tar.gz",
+    :sha256 => "@ARCHIVE_SHA@"
+  }
+
+  s.vendored_frameworks    = "libs/boost/osx/boost.xcframework"
+  s.libraries              = "c++"
+  s.module_map             = false
+  s.preserve_paths         = "BUILD-INFO.txt", "COMPONENTS.md",
+                             "libs/boost/cmake/**/*", "libs/boost/pkgconfig/**/*"
+end

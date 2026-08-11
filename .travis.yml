@@ -1,12 +1,10 @@
 language: objective-c
+osx_image: xcode-14.3
 matrix:
   include:
-    - os: osx
-      env: TYPE="libc++"
-    - os: osx
-      env: TYPE="libstdc++"
-script: 
-    - scripts/build-$TYPE
+         - osx_image: xcode-14.3
+          env: TYPE="libc++"
+script:
+         - scripts/build-$TYPE
 git:
     depth: 10
-

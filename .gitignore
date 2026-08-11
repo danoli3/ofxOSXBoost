@@ -3,24 +3,25 @@
 *.lo
 *.o
 
-# *.a # We do want this… arg!
+# *.a # We DO want this -- static libraries are the XCFramework payload
 
 # Compiled Dynamic libraries
 *.so
 *.dylib
 
-# Compiled Static libraries
+# Compiled Static libraries (keep .a from git, it is a placeholder)
 *.lai
 *.la
 
-
-# Do no ignore the debug folder
+# Do not ignore the debug folder
 !*/debug/
 !*/debug/*
 
-# Created by https://www.gitignore.io
+# XCFramework
+*.xcframework/
+*.xcframework.zip
 
-### Xcode ###
+# Xcode
 build/
 *.pbxuser
 !default.pbxuser
@@ -40,4 +41,6 @@ DerivedData
 
 *.xcscheme
 
+# Boost tarballs
 *.bz2
+*.gz

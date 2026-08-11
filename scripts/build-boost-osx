@@ -1,0 +1,414 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ofxOSXBoost — macOS build script
+# Mirrors build-boost-ios structure, adapted for macOS only.
+# Targets macOS 10.15 deployment with x86_64 + arm64 universal binary.
+#
+# Requires: Xcode command-line tools, macOS 10.15+ SDK.
+#
+# Configure via environment variables:
+#   BOOST_VERSION  - Boost version to build    (default: 1.66.0)
+#   BOOST_LIBS     - Space-separated library names
+#   OSX_MIN_VERSION - macOS deployment target  (default: 10.15)
+#   JOBS           - Parallel build threads
+#
+# Usage:
+#     ./scripts/build-boost-osx
+#    BOOST_VERSION=1.65.0 ./scripts/build-boost-osx
+
+BOOST_VERSION="${1:-${BOOST_VERSION:-1.66.0}}"
+OSX_MIN_VERSION="${OSX_MIN_VERSION:-10.15}"
+
+case "$BOOST_VERSION" in
+    1.61.0|1.62.0|1.63.0|1.64.0|1.65.0|1.66.0) ;;
+    *) echo "Boost $BOOST_VERSION is not yet supported (supported: 1.61.0 … 1.66.0).">&2; exit 2 ;;
+esac
+
+# C++ standard per Boost version
+BOOST_MINOR="$(printf '%s' "$BOOST_VERSION" | cut -d. -f2)"
+if (( BOOST_MINOR <= 64 )); then
+  DEFAULT_CPPSTD=c++11
+elif (( BOOST_MINOR <= 66 )); then
+  DEFAULT_CPPSTD=c++14
+else
+  DEFAULT_CPPSTD=c++20
+fi
+CPPSTD="${CPPSTD:-$DEFAULT_CPPSTD}"
+
+command -v xcrun >/dev/null 2>&1 || { echo "Xcode command-line tools are required.">&2; exit 1; }
+command -v curl     >/dev/null 2>&1 || { echo "curl is required.">&2; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+COMP_MANIFEST="$REPO_ROOT/packaging/versions/${BOOST_VERSION}-components.tsv"
+[[ -s "$COMP_MANIFEST" ]] || { echo "Missing component manifest: $COMP_MANIFEST">&2; exit 1; }
+
+AVAILABLE_LIBS="$(awk -F '\t' '$1 == "included" || $1 == "excluded" { print $2 }' \
+     "$COMP_MANIFEST" | paste -sd ' ' -)"
+
+for lib in $BOOST_LIBS; do
+    [[ " $AVAILABLE_LIBS " == *" $lib "* ]] || {
+        echo "Unknown library '$lib' for Boost $BOOST_VERSION.">&2; exit 2
+    }
+done
+
+EXCLUDED_LIBS=""
+for lib in $AVAILABLE_LIBS; do
+    [[ " $BOOST_LIBS " != *" $lib "* ]] && \
+        EXCLUDED_LIBS="${EXCLUDED_LIBS:+$EXCLUDED_LIBS }$lib"
+done
+
+VERSION_UNDERSCORED="${BOOST_VERSION//./_}"
+
+# ── Directory paths ──────────────────────────────────────────────────
+DIST_DIR="${DIST_DIR:-$REPO_ROOT/dist}"
+DOWNLOAD_CACHE="${BOOST_DOWNLOAD_CACHE:-${TMPDIR:-/tmp}/ofxOSXBoost-downloads}"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ofxosxboost.XXXXXX")"
+SOURCE_DIR="$WORK_DIR/boost_${VERSION_UNDERSCORED}"
+BUILD_DIR="$WORK_DIR/build"
+PACKAGE_DIR="$WORK_DIR/ofxOSXBoost-${BOOST_VERSION}"
+
+cleanup() { rm -rf "$WORK_DIR"; }
+trap cleanup EXIT
+
+JOBS="${JOBS:-$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)}"
+MACOS_SDK="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || echo '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk')"
+CLANGXX="$(xcrun --find clang++ 2>/dev/null || true)"
+
+echo "=== Boost $BOOST_VERSION for macos ==="
+echo "  Deployment target: $OSX_MIN_VERSION"
+echo "  C++ standard      : $CPPSTD"
+echo "  Libraries         : $BOOST_LIBS"
+echo "  Architectures     : x86_64 + arm64"
+
+# ── Download ─────────────────────────────────────────────────────────
+mkdir -p "$DOWNLOAD_CACHE"
+CACHED="$DOWNLOAD_CACHE/boost_${VERSION_UNDERSCORED}.tar.gz"
+if [[ ! -s "$CACHED" ]]; then
+  curl --fail --location --retry 3 \
+       "https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${VERSION_UNDERSCORED}.tar.gz" \
+       --output "$CACHED.part" || {
+    echo "archvies.boost.io unavailable; trying GitHub mirror...">&2
+    curl --fail --location --retry 3 \
+         "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION/./\\.}/boost-${BOOST_VERSION}_.tar.gz" \
+         --output "$CACHED.part"
+  }
+  mv "$CACHED.part" "$CACHED"
+fi
+tar -xzf "$CACHED" -C "$WORK_DIR"
+
+# ── Patches ──────────────────────────────────────────────────────────
+echo "Applying build-engine patches for $BOOST_VERSION"
+PATCH=""
+case "$BOOST_VERSION" in
+    1.66.0) PATCH="$REPO_ROOT/patches/boost-1.66.0-build-engine.patch" ;;
+    1.65.0) PATCH="$REPO_ROOT/patches/boost-1.65.0-build-engine.patch" ;;
+    1.64.0) PATCH="$REPO_ROOT/patches/boost-1.64.0-build-engine.patch" ;;
+    *)      PATCH="$REPO_ROOT/patches/boost-1.61.0-build-engine.patch" ;;
+esac
+if [[ -s "$PATCH" ]]; then
+    patch -d "$SOURCE_DIR" -p1 < "$PATCH" || true
+fi
+
+# ── Bootstrap ────────────────────────────────────────────────────────
+LIBS_CSV="${BOOST_LIBS// /,}"
+(
+    cd "$SOURCE_DIR"
+    CC="$(xcrun --find clang 2>/dev/null || echo clang)" \
+    CFLAGS="-isysroot $MACOS_SDK" \
+    ./bootstrap.sh --with-toolset=clang --with-libraries="$LIBS_CSV"
+)
+
+# ── User-config.jam ──────────────────────────────────────────────────
+cat > "$WORK_DIR/user-config.jam" <<ENDJAM
+using clang : mac_x86_64 : $CLANGXX :
+         <compileflags>"-arch x86_64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hi
+dden -Wno-deprecated-d
+eclarations -Qunused-arguments"
+         <linkflags>"-arch x86_64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -stdlib=libc++"
+;
+using clang : mac_arm64 : $CLANGXX :
+         <compileflags>"-arch arm64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hi
+dden -Wno-deprecated-d
+eclarations -Qunused-arguments"
+         <linkflags>"-arch arm64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -stdlib=libc++"
+;
+ENDJAM
+
+# ── Build per-architecture ───────────────────────────────────────────
+build_library() {
+    local name="$1"
+    local toolset="$2"
+    local arch="$3"
+    local addr="$4"
+
+    echo "  Building $name ($arch $addr-bit) ..."
+    (
+        cd "$SOURCE_DIR"
+        ./b2 -j"$JOBS" \
+             --user-config="$WORK_DIR/user-config.jam" \
+             --build-dir="$BUILD_DIR/$name" \
+             --stagedir="$BUILD_DIR/$name/stage" \
+             toolset="$toolset" \
+             architecture="$arch" \
+             address-model="$addr" \
+             target-os=macos \
+             variant=release \
+             link=static \
+             runtime-link=static \
+             threading=multi \
+             stage
+    )
+
+    local libs=( "$BUILD_DIR/$name/stage"/lib/libboost_*.a )
+    [[ -e "${libs[0]}" ]] || { echo "No libraries for $name.">&2; exit 1; }
+    xcrun libtool -static -o "$BUILD_DIR/$name-final.a" "${libs[@]}"
+    echo "     => $BUILD_DIR/$name-final.a"
+}
+
+# We need --with-xxx flags but b2 ignores them
+# if we're linking static; just do a generic build
+(
+    cd "$SOURCE_DIR"
+    ./b2 -j"$JOBS" \
+         --user-config="$WORK_DIR/user-config.jam" \
+         --build-dir="$BUILD_DIR/macos_x86_64" \
+         --stagedir="$BUILD_DIR/macos_x86_64/stage" \
+        toolset=clang-mac_x86_64 \
+        architecture=x86 \
+        address-model=64 \
+        target-os=macos \
+        variant=release \
+        link=static \
+        runtime-link=static \
+        threading=multi \
+        stage
+)
+xcrun libtool -static \
+     -o "$BUILD_DIR/macos_x86_64-final.a" \
+     "$BUILD_DIR/macos_x86_64/stage"/lib/libboost_*.a
+
+(
+    cd "$SOURCE_DIR"
+    ./b2 -j"$JOBS" \
+         --user-config="$WORK_DIR/user-config.jam" \
+         --build-dir="$BUILD_DIR/macos_arm64" \
+         --stagedir="$BUILD_DIR/macos_arm64/stage" \
+        toolset=clang-mac_arm64 \
+        architecture=arm \
+        address-model=64 \
+        target-os=macos \
+        variant=release \
+        link=static \
+        runtime-link=static \
+        threading=multi \
+        stage
+)
+xcrun libtool -static \
+     -o "$BUILD_DIR/macos_arm64-final.a" \
+     "$BUILD_DIR/macos_arm64/stage"/lib/libboost_*.a
+
+# ── Package XCFramework ──────────────────────────────────────────────
+mkdir -p "$DIST_DIR" "$PACKAGE_DIR"
+
+cp -R "$SOURCE_DIR/boost" "$PACKAGE_DIR/Headers/"
+
+UNIVERSAL_LIB="$BUILD_DIR/boost-universal.a"
+xcrun libtool -static \
+     -o "$UNIVERSAL_LIB" \
+     "$BUILD_DIR/macos_x86_64-final.a" \
+     "$BUILD_DIR/macos_arm64-final.a"
+echo "  Universal library: $UNIVERSAL_LIB"
+
+FRAME="$PACKAGE_DIR/boost.xcframework"
+SLICE="${FRAME}/macos-arm64_x86_64"
+mkdir -p "${SLICE}/Headers"
+cp "$UNIVERSAL_LIB"   "${SLICE}/libboost.a"
+mkdir -p "${SLICE}/Headers"
+cp -R "$PACKAGE_DIR/Headers/boost" "${SLICE}/Headers/"
+
+cat > "${FRAME}/Info.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/Prop
+ertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+     <key>CFBundlePackageType</key>
+     <string>XCFW</string>
+     <key>XCFrameworkFormatVersion</key>
+     <string>1.0</string>
+     <key>CFBundleSignature</key>
+     <string>????</string>
+</dict>
+</plist>
+EOF
+
+cat > "${SLICE}/Info.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/Prop
+ertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+     <key>CFBundleExecutable</key>
+     <string>boost</string>
+     <key>CFBundlePackageType</key>
+     <string>FMWK</string>
+     <key>XCFrameworkIdentifier</key>
+     <string>boost</string>
+</dict>
+</plist>
+EOF
+
+# ── Metadata ─────────────────────────────────────────────────────────
+SOURCE_SHA="$(shasum -a 256 "$CACHED" | awk '{ print $1 }')"
+BUILD_TIME="$(date -u '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || date '+%Y-%m-%d %H:%M:%SZ')"
+BUILD_NUMBER="${GITHUB_RUN_NUMBER:-1}"
+
+# PKL
+cat > "${SLICE}/boost.pkl" <<EOF
+name = "boost"
+version = "$BOOST_VERSION"
+buildTime = "$BUILD_TIME"
+buildNumber = "$BUILD_NUMBER"
+type = "osx"
+gitUrl = "https://github.com/danoli3/ofxOSXBoost"
+cppStandard = "${CPPSTD#c++}"
+cStandard = ""
+linkerFlags = ""
+dependencies = ""
+binary = "libboost.a"
+shaType = "sha256sum"
+sourceSHA = "$SOURCE_SHA"
+defines = "BOOST_SP_USE_SPINLOCK"
+frameworks = ""
+includedLibraries = "$BOOST_LIBS"
+excludedLibraries = "$EXCLUDED_LIBS"
+EOF
+
+# write_component_text helper
+write_component_text() {
+  local dest="$1"
+  {
+    echo "Boost $BOOST_VERSION compiled component inventory"
+    echo
+    echo "Included in this binary:"
+    for l in $BOOST_LIBS; do echo "- $l"; done
+    echo
+    echo "Not included in this binary:"
+    while IFS=$'\t' read -r status lib note; do
+      [[ "$status" == "included" || "$status" == "excluded" ]] || continue
+      [[ " $BOOST_LIBS " != *" $lib "* ]] && echo "- $lib: $note"
+    done < "$COMP_MANIFEST"
+    echo
+    echo "All Boost headers are packaged. 'Not included' means the compiled"
+    echo "library is absent from the combined static binary; header-only"
+    echo "facilities remain available. See COMPONENTS.md for details."
+  } > "$dest"
+}
+write_component_text "${SLICE}/boost-components.txt"
+
+# COMPONENTS.md
+{
+  echo "# Boost $BOOST_VERSION component inventory"
+  echo
+  echo "The XCFramework contains all Boost headers. This inventory describes which"
+  echo "libraries contribute compiled objects to the combined static binary."
+  echo
+  echo "| Component | Binary status | Notes |"
+  echo "| --- | --- | --- |"
+  while IFS=$'\t' read -r mstatus lib note; do
+    [[ "$mstatus" == "included" || "$mstatus" == "excluded" ]] || continue
+    if [[ " $BOOST_LIBS " == *" $lib "* ]]; then
+      st="Included"
+    else
+      st="Not included"
+    fi
+    echo "| \`$lib\` | $st | $note |"
+  done < "$COMP_MANIFEST"
+} > "$PACKAGE_DIR/COMPONENTS.md"
+
+# CMake package
+mkdir -p "$PACKAGE_DIR/cmake/ofxOSXBoost"
+CMAKE_FEATURE="cxx_std_${CPPSTD#c++}"
+sed -e "s|@BOOST_VERSION@|${BOOST_VERSION}|g" \
+    -e "s|@CMAKE_COMPILE_FEATURE@|${CMAKE_FEATURE}|g" \
+    "$REPO_ROOT/packaging/cmake/ofxOSXBoostConfig.cmake.in" \
+    > "$PACKAGE_DIR/cmake/ofxOSXBoost/ofxOSXBoostConfig.cmake"
+sed -e "s|@BOOST_VERSION@|${BOOST_VERSION}|g" \
+    "$REPO_ROOT/packaging/cmake/ofxOSXBoostConfigVersion.cmake.in" \
+    > "$PACKAGE_DIR/cmake/ofxOSXBoost/ofxOSXBoostConfigVersion.cmake"
+
+# pkg-config
+mkdir -p "$PACKAGE_DIR/pkgconfig"
+for tmpl in "$REPO_ROOT"/packaging/pkgconfig/*.pc.in; do
+  base="$(basename "$tmpl" .pc.in)"
+  sed -e "s|@BOOST_VERSION@|${BOOST_VERSION}|g" \
+      -e "s|@CPPSTD@|${CPPSTD}|g" \
+      "$tmpl" > "$PACKAGE_DIR/${base}-osx.pc"
+done
+
+# BUILD-INFO.txt
+cat > "$PACKAGE_DIR/BUILD-INFO.txt" <<EOF
+Boost: $BOOST_VERSION
+macOS deployment target: $OSX_MIN_VERSION
+Architectures: x86_64 + arm64 (universal binary)
+Packaging: XCFramework (macos-arm64_x86_64)
+Metadata: PKL, CMake package, pkg-config
+C++ standard library: libc++
+C++ language standard: $CPPSTD
+Libraries: $BOOST_LIBS
+Excluded compiled libraries: $EXCLUDED_LIBS
+EOF
+
+# XCF zip
+ARCHIVE_NAME="ofxOSXBoost-${BOOST_VERSION}"
+( cd "$WORK_DIR" && ditto -c -k --sequesterRsrc --keepParent \
+    "boost.xcframework" "${ARCHIVE_NAME}-xcframework.zip" )
+cp "$WORK_DIR/${ARCHIVE_NAME}-xcframework.zip" "$DIST_DIR/"
+
+# ── Release tarball (addon packaging) ────────────────────────────────
+ADDON_STAGE="$WORK_DIR/addon-package"
+mkdir -p "$ADDON_STAGE"
+git -C "$REPO_ROOT" archive --prefix="$ARCHIVE_NAME/" HEAD \
+     | tar -xf - -C "$ADDON_STAGE" 2>/dev/null || true
+
+ADDON_ROOT="$ADDON_STAGE/$ARCHIVE_NAME"
+if [[ ! -d "$ADDON_ROOT" ]]; then
+   # Fallback: manual tarball structure
+  mkdir -p "$ADDON_ROOT/libs/boost/osx" \
+           "$ADDON_ROOT/libs/boost/cmake" \
+           "$ADDON_ROOT/libs/boost/pkgconfig"
+  cp -R "$PACKAGE_DIR/boost.xcframework" "$ADDON_ROOT/libs/boost/osx/"
+  cp -R   "$PACKAGE_DIR/cmake"          "$ADDON_ROOT/libs/boost/"
+  cp -R   "$PACKAGE_DIR/pkgconfig"     "$ADDON_ROOT/libs/boost/"
+  cp "$PACKAGE_DIR/BUILD-INFO.txt" \
+      "$PACKAGE_DIR/COMPONENTS.md"    "$ADDON_ROOT/"
+   # Copy existing repo files for the tarball
+  for f in addon_config.mk README.md addon_config.mk; do
+    [[ -f "$REPO_ROOT/$f" ]] && cp "$REPO_ROOT/$f" "$ADDON_ROOT/"
+  done
+else
+  rm -rf "$ADDON_ROOT/libs/boost/include" \
+           "$ADDON_ROOT/libs/boost/osx"          \
+           "$ADDON_ROOT/libs/boost/cmake"       \
+           "$ADDON_ROOT/libs/boost/pkgconfig"
+  mkdir -p "$ADDON_ROOT/libs/boost/osx"
+  cp -R "$PACKAGE_DIR/boost.xcframework" "$ADDON_ROOT/libs/boost/osx/"
+  cp -R "$PACKAGE_DIR/cmake"           "$ADDON_ROOT/libs/boost/"
+  cp -R "$PACKAGE_DIR/pkgconfig"      "$ADDON_ROOT/libs/boost/"
+  cp "$PACKAGE_DIR/BUILD-INFO.txt" \
+      "$PACKAGE_DIR/COMPONENTS.md"   "$ADDON_ROOT/"
+fi
+
+tar -czf "$DIST_DIR/$ARCHIVE_NAME.tar.gz" -C "$ADDON_STAGE" "$ARCHIVE_NAME"
+
+(
+  cd "$DIST_DIR"
+  shasum -a 256 "$ARCHIVE_NAME.tar.gz" > "${ARCHIVE_NAME}.tar.gz.sha256"
+)
+
+echo
+echo "=== Build complete ==="
+echo "Tarball     : $DIST_DIR/$ARCHIVE_NAME.tar.gz"
+echo "XCFramework: $DIST_DIR/${ARCHIVE_NAME}-xcframework.zip"

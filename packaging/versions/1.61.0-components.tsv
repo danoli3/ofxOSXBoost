@@ -1,0 +1,29 @@
+# status	library	note
+# upstream	https://www.boost.org/users/history/version_1_61_0.html
+included	chrono	Compiled date and time duration support (macOS).
+included	date_time	Compiled date/time and locale facets (macOS).
+included	filesystem	Portable filesystem operations used by the addon examples (macOS).
+included	graph	Compiled Graph library algorithms (macOS).
+included	locale	Localization backends available without optional ICU packaging (macOS).
+included	random	Compiled random_device implementation (macOS).
+included	regex	Regular-expression engine used by the addon examples (macOS).
+included	signals	Legacy Boost.Signals compatibility for existing projects (macOS).
+included	system	Error-code support required by several compiled libraries (macOS).
+included	thread	Portable threading primitives (macOS).
+excluded	atomic	Not selected initially; compiler intrinsics cover common x86_64/arm64 operations (macOS).
+excluded	container	Not selected in the original compiled-library set (macOS).
+excluded	context	Requires architecture-specific assembly and dedicated macOS runtime tests (macOS).
+excluded	coroutine	Depends on Boost.Context and requires the same architecture-specific testing (macOS).
+excluded	coroutine2	Depends on Boost.Context and requires the same architecture-specific testing (macOS).
+excluded	exception	Predominantly header-based; no compiled binary selected (macOS).
+excluded	graph_parallel	Depends on MPI and is not appropriate for a normal macOS application (macOS).
+excluded	iostreams	Not yet packaged; compression filters also require explicit zlib/bzip2 dependency handling (macOS).
+excluded	log	Large dependency surface and desktop-oriented backends require a macOS-specific configuration and tests (macOS).
+excluded	math	Not selected initially; useful scientific components may be added after testing (macOS).
+excluded	program_options	Command-line parsing is of limited use in a normal macOS application (macOS).
+excluded	serialization	Not selected initially; a strong candidate for the next expanded build (macOS).
+excluded	iostreams	Not selected initially; a strong candidate for the next expanded build (macOS).
+excluded	test	Intended for test executables rather than the shipped application library (macOS).
+excluded	timer	Not selected initially; a small candidate for the next expanded build (macOS).
+excluded	type_erasure	Predominantly header-based; no compiled binary selected (macOS).
+excluded	wave	Large C/C++ preprocessing toolchain not normally needed at macOS runtime (macOS).

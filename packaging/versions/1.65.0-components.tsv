@@ -1,0 +1,31 @@
+# status	library	note
+# upstream	https://www.boost.org/users/history/version_1_65_0.html
+included	atomic	Not selected initially; compiler intrinsics cover common x86_64/arm64 operations (macOS, C++14).
+included	chrono	Compiled date and time duration support (macOS, C++14).
+included	coroutine	Back-compat coroutine library (macOS, C++14).
+included	coroutine2	C++14 coroutines (macOS, C++14).
+included	context	Architecture-specific assembly for coroutines (macOS, C++14).
+included	date_time	Compiled date/time and locale facets (macOS, C++14).
+included	filesystem	Portable filesystem operations used by the addon examples (macOS, C++14).
+included	filesystem3	Portable filesystem operations used by the addon examples (macOS, C++14).
+included	graph	Compiled Graph library algorithms (macOS, C++14).
+included	locale	Localization backends available without optional ICU packaging (macOS, C++14).
+included	mp11	Boost.Mp11 — C++14 metaprogramming library (macOS, C++14).
+included	random	Compiled random_device implementation (macOS, C++14).
+included	regex	Regular-expression engine used by the addon examples (macOS, C++14).
+included	regex_extended	REXX-compatible regex engine (macOS, C++14).
+included	signals	Legacy Boost.Signals compatibility for existing projects (macOS, C++14).
+included	signals2	Boost.Signals2 compatibility for existing projects (macOS, C++14).
+included	system	Error-code support required by several compiled libraries (macOS, C++14).
+included	thread	Portable threading primitives (macOS, C++14).
+excluded	exception	Predominantly header-based; no compiled binary selected (macOS, C++14).
+excluded	iostreams	Not yet packaged; compression filters also require explicit zlib/bzip2 dependency handling (macOS, C++14).
+excluded	log	Large dependency surface and desktop-oriented backends require a macOS-specific configuration and tests (macOS, C++14).
+excluded	math	Not selected initially; useful scientific components may be added after testing (macOS, C++14).
+excluded	metaparse	Predominantly header-based; no compiled binary selected (macOS, C++14).
+excluded	program_options	Command-line parsing is of limited use in a normal macOS application (macOS, C++14).
+excluded	serialization	Not selected initially; a strong candidate for the next expanded build (macOS, C++14).
+excluded	test	Intended for test executables rather than the shipped application library (macOS, C++14).
+excluded	timer	Not selected initially; a small candidate for the next expanded build (macOS, C++14).
+excluded	type_erasure	Predominantly header-based; no compiled binary selected (macOS, C++14).
+excluded	wave	Large C/C++ preprocessing toolchain not normally needed at macOS runtime (macOS, C++14).

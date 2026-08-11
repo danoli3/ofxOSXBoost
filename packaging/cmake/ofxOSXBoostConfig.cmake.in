@@ -1,0 +1,37 @@
+# Relocatable CMake package for the ofxOSXBoost XCFramework.
+get_filename_component(_OFXOSXBOOST_PREFIX "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+set(_OFXOSXBOOST_XCFRAMEWORK "${_OFXOSXBOOST_PREFIX}/osx/boost.xcframework")
+
+# macOS only — no iOS/device split
+set(_OFXOSXBOOST_SLICE "macos-arm64_x86_64")
+set(_OFXOSXBOOST_LIBRARY "libboost.a")
+
+set(_OFXOSXBOOST_LIBRARY_PATH
+     "${_OFXOSXBOOST_XCFRAMEWORK}/${_OFXOSXBOOST_SLICE}/${_OFXOSXBOOST_LIBRARY}")
+set(_OFXOSXBOOST_INCLUDE_PATH
+     "${_OFXOSXBOOST_XCFRAMEWORK}/${_OFXOSXBOOST_SLICE}/Headers")
+
+if(NOT EXISTS "${_OFXOSXBOOST_LIBRARY_PATH}" OR
+   NOT IS_DIRECTORY "${_OFXOSXBOOST_INCLUDE_PATH}")
+    message(FATAL_ERROR
+        "ofxOSXBoost @BOOST_VERSION@ is incomplete or missing the macOS slice")
+endif()
+
+if(NOT TARGET ofxOSXBoost::boost)
+    add_library(ofxOSXBoost::boost STATIC IMPORTED GLOBAL)
+    set_target_properties(ofxOSXBoost::boost PROPERTIES
+        IMPORTED_LOCATION "${_OFXOSXBOOST_LIBRARY_PATH}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_OFXOSXBOOST_INCLUDE_PATH}"
+        INTERFACE_COMPILE_FEATURES "@CMAKE_COMPILE_FEATURE@"
+    )
+endif()
+
+set(ofxOSXBoost_VERSION "@BOOST_VERSION@")
+set(ofxOSXBoost_FOUND TRUE)
+
+unset(_OFXOSXBOOST_LIBRARY)
+unset(_OFXOSXBOOST_LIBRARY_PATH)
+unset(_OFXOSXBOOST_INCLUDE_PATH)
+unset(_OFXOSXBOOST_SLICE)
+unset(_OFXOSXBOOST_XCFRAMEWORK)
+unset(_OFXOSXBOOST_PREFIX)

@@ -1,0 +1,11 @@
+# pkg-config template for macOS XCFramework
+prefix=${pcfiledir}/..
+xcframework=${prefix}/osx/boost.xcframework
+libdir=${xcframework}/macos-arm64_x86_64
+includedir=${libdir}/Headers
+
+Name: ofxOSXBoost
+Description: Boost @BOOST_VERSION@ static libraries for macOS
+Version: @BOOST_VERSION@
+Cflags: -I${includedir} -std=@CPPSTD@
+Libs: ${libdir}/libboost.a

@@ -15,8 +15,8 @@
 # and the PG will write to the console the kind of error and in which line it is
 
 meta:
-	ADDON_NAME = ofxOSXBoost
-	ADDON_DESCRIPTION = Boost C++ libraries precompiled for macOS 10.15+. Includes pre-compiled XCFramework and scripts to build.
+	ADDON_NAME = ofxiOSBoost
+	ADDON_DESCRIPTION = Boost C++ libraries for macOS 10.15+, distributed as a versioned XCFramework release.
 	ADDON_AUTHOR = Danoli3
 	ADDON_TAGS = "osx" "boost"
 	ADDON_URL = http://github.com/danoli3/ofxOSXBoost

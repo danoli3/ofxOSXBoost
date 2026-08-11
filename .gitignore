@@ -1,46 +1,45 @@
+.DS_Store
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
 
-# *.a # We DO want this -- static libraries are the XCFramework payload
-
 # Compiled Dynamic libraries
 *.so
 *.dylib
 
-# Compiled Static libraries (keep .a from git, it is a placeholder)
+# Compiled Static libraries
 *.lai
 *.la
 
-# Do not ignore the debug folder
+# Do no ignore the debug folder
 !*/debug/
 !*/debug/*
+.DS_Store
 
-# XCFramework
-*.xcframework/
-*.xcframework.zip
+libs/boost/lib/.DS_Store
+build
+dist/
+libs/boost/boost.xcframework/
+libs/boost/osx/boost.xcframework/
 
-# Xcode
-build/
 *.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
+*.perspective
 *.perspectivev3
-!default.perspectivev3
-xcuserdata
 *.xccheckout
-*.moved-aside
-DerivedData
-*.xcuserstate
+
+*.mode1v3
+*.mode2v3
+
+xcuserdata/
 
 *.app
 
-*.xcscheme
 
-# Boost tarballs
 *.bz2
-*.gz
+republish.sh
+AGENTS.md
+example-xcframework/boost.xcframework/macos-arm64_x86_64/Headers/boost/accumulators/statistics/covariance.hpp
+/example-xcframework/boost.xcframework
+/libs/boost.xcframework

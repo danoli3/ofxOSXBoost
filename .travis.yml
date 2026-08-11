@@ -1,10 +1,6 @@
 language: objective-c
 osx_image: xcode-14.3
-matrix:
-  include:
-         - osx_image: xcode-14.3
-          env: TYPE="libc++"
 script:
-         - scripts/build-$TYPE
+  - ./scripts/build-boost-osx
 git:
-    depth: 10
+  depth: 10

@@ -1,0 +1,175 @@
+name: Build and release Boost for macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      boost_version:
+        description: 'Boost version to build'
+        required: true
+        default: '1.67.0'
+        type: string
+  push:
+    branches:
+      - master
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'boost-release-${{ github.ref }}'
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    env:
+      BOOST_VERSION: ${{ inputs.boost_version || '1.67.0' }}
+      OSX_MIN_VERSION: '10.15'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve tag version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "BOOST_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
+      - name: Validate supported release
+        run: |
+          case "$BOOST_VERSION" in \
+            1.61.0|1.62.0|1.63.0|1.64.0|1.65.0|1.66.0|1.67.0) \
+              ;; \
+            *) echo "Boost $BOOST_VERSION is not supported" >&2; exit 1 ;; \
+          esac
+
+      - name: Build release archive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./scripts/build-boost-osx
+          log="$RUNNER_TEMP/build-release.log"
+          if ! ./scripts/build-boost-osx "$BOOST_VERSION" > "$log" 2>&1; then
+            tail -n 200 "$log"
+            exit 1
+          fi
+
+      - name: Verify XCFramework structure
+        run: |
+          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          if [[ ! -f "$FRAME/Info.plist" ]]; then
+            echo "boost.xcframework Info.plist missing"
+            echo "Contents: $(ls -la "$FRAME")"
+            exit 1
+          fi
+          FRAME_DIR="$(find "$FRAME" -maxdepth 1 -name '*.xcframework' -print -quit)"
+          LIB="$(find "$FRAME" -name 'libboost.a' -print -quit)"
+          if [[ -z "$LIB" ]]; then
+            echo "libboost.a not found in XCFramework"
+            find "$FRAME" -type f
+            exit 1
+          fi
+          ARCHS="$(xcrun lipo -info "$LIB")"
+          echo "Architectures: $ARCHS"
+          echo "$ARCHS" | grep -q "arm64" || \
+            { echo "arm64 missing"; exit 1; }
+          echo "$ARCHS" | grep -q "x86_64" || \
+            { echo "x86_64 missing"; exit 1; }
+
+      - name: Verify symbols
+        run: |
+          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          LIB="$(find "$FRAME" -name 'libboost.a' -print -quit)"
+          for symbol in \
+            _make_fcontext \
+            _jump_fcontext \
+            _ontop_fcontext \
+            _cpp_context \
+            _current_cpp_context; do
+            if ! nm -gU "$LIB" 2>/dev/null | grep -q "$symbol"; then
+              echo "Missing symbol: $symbol"
+              exit 1
+            fi
+          done
+          echo "All critical symbols verified."
+
+      - name: Validate Homebrew formula
+        run: |
+          brew update
+          brew audit --strict Formula/ofxOSXBoost.rb
+
+      - name: Validate podspec
+        run: |
+          log="$RUNNER_TEMP/podspec-lint.log"
+          if ! pod lib lint ofxOSXBoost.podspec \
+            --platforms=osx \
+            --verbose \
+            > "$log" 2>&1; then
+            tail -n 200 "$log"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'ofxOSXBoost-${{ env.BOOST_VERSION }}'
+          path: |
+            dist/ofxOSXBoost-${{ env.BOOST_VERSION }}.tar.gz
+            dist/ofxOSXBoost-${{ env.BOOST_VERSION }}.tar.gz.sha256
+            dist/ofxOSXBoost.podspec
+            dist/ofxOSXBoost-${{ env.BOOST_VERSION }}-xcframework.zip
+            dist/ofxOSXBoost-${{ env.BOOST_VERSION }}-xcframework.zip.sha256
+          if-no-files-found: error
+
+      - name: Create or update GitHub release
+        if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ env.BOOST_VERSION }}
+        run: |
+          notes="$RUNNER_TEMP/release-notes.md"
+          bash ./scripts/generate-release-notes.sh "$BOOST_VERSION" "$notes"
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "Boost $BOOST_VERSION for macOS" \
+              --notes-file "$notes" \
+              --prerelease=true
+          fi
+          gh release edit "$RELEASE_TAG" \
+            --title "Boost $BOOST_VERSION for macOS" \
+            --notes-file "$notes"
+          gh release upload "$RELEASE_TAG" \
+            "dist/ofxOSXBoost-${BOOST_VERSION}.tar.gz" \
+            "dist/ofxOSXBoost-${BOOST_VERSION}.tar.gz.sha256" \
+            "dist/ofxOSXBoost.podspec" \
+            "dist/ofxOSXBoost-${BOOST_VERSION}-xcframework.zip" \
+            "dist/ofxOSXBoost-${BOOST_VERSION}-xcframework.zip.sha256" \
+            --clobber
+
+      - name: Validate CocoaPods source
+        if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
+        run: |
+          log="$RUNNER_TEMP/published-podspec-lint.log"
+          pod spec lint ofxOSXBoost.podspec \
+            --platforms=osx \
+            > "$log" 2>&1 || {
+              tail -n 200 "$log"
+              exit 1
+            }
+
+      - name: Publish CocoaPods release
+        if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          if [[ -z "$COCOAPODS_TRUNK_TOKEN" ]]; then
+            echo "COCOAPODS_TRUNK_TOKEN not configured — skipping CocoaPods Trunk publish."
+            exit 0
+          fi
+          if pod trunk info ofxOSXBoost 2>/dev/null \
+            | grep -Fq -- "- ${BOOST_VERSION}("; then
+            echo "ofxOSXBoost $BOOST_VERSION already published to CocoaPods Trunk."
+            exit 0
+          fi
+          pod trunk push "dist/ofxOSXBoost.podspec"

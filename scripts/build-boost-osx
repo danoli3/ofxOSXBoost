@@ -154,7 +154,7 @@ ENDJAM
         toolset=clang-mac_x86_64 \
         architecture=x86 \
         address-model=64 \
-        target-os=macos \
+        target-os=darwin \
         variant=release \
         link=static \
         runtime-link=static \
@@ -174,7 +174,7 @@ xcrun libtool -static \
         toolset=clang-mac_arm64 \
         architecture=arm \
         address-model=64 \
-        target-os=macos \
+        target-os=darwin \
         variant=release \
         link=static \
         runtime-link=static \

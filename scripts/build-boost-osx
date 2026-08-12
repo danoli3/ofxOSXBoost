@@ -129,51 +129,19 @@ LIBS_CSV="${BOOST_LIBS// /,}"
 )
 
 # ── User-config.jam ──────────────────────────────────────────────────
+DEPRECATED_FLAG="-Wno-deprecated-declarations"
+
 cat > "$WORK_DIR/user-config.jam" <<ENDJAM
 using clang : mac_x86_64 : $CLANGXX :
-         <compileflags>"-arch x86_64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hi
-dden -Wno-deprecated-d
-eclarations -Qunused-arguments"
+         <compileflags>"-arch x86_64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hidden $DEPRECATED_FLAG -Qunused-arguments"
          <linkflags>"-arch x86_64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -stdlib=libc++"
 ;
 using clang : mac_arm64 : $CLANGXX :
-         <compileflags>"-arch arm64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hi
-dden -Wno-deprecated-d
-eclarations -Qunused-arguments"
+         <compileflags>"-arch arm64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -fPIC -std=$CPPSTD -stdlib=libc++ -fvisibility=hidden -fvisibility-inlines-hidden $DEPRECATED_FLAG -Qunused-arguments"
          <linkflags>"-arch arm64 -isysroot \"$MACOS_SDK\" -mmacosx-version-min=$OSX_MIN_VERSION -stdlib=libc++"
 ;
 ENDJAM
 
-# ── Build per-architecture ───────────────────────────────────────────
-build_library() {
-    local name="$1"
-    local toolset="$2"
-    local arch="$3"
-    local addr="$4"
-
-    echo "  Building $name ($arch $addr-bit) ..."
-    (
-        cd "$SOURCE_DIR"
-        ./b2 -j"$JOBS" \
-             --user-config="$WORK_DIR/user-config.jam" \
-             --build-dir="$BUILD_DIR/$name" \
-             --stagedir="$BUILD_DIR/$name/stage" \
-             toolset="$toolset" \
-             architecture="$arch" \
-             address-model="$addr" \
-             target-os=macos \
-             variant=release \
-             link=static \
-             runtime-link=static \
-             threading=multi \
-             stage
-    )
-
-    local libs=( "$BUILD_DIR/$name/stage"/lib/libboost_*.a )
-    [[ -e "${libs[0]}" ]] || { echo "No libraries for $name.">&2; exit 1; }
-    xcrun libtool -static -o "$BUILD_DIR/$name-final.a" "${libs[@]}"
-    echo "     => $BUILD_DIR/$name-final.a"
-}
 
 # We need --with-xxx flags but b2 ignores them
 # if we're linking static; just do a generic build
@@ -393,7 +361,7 @@ if [[ ! -d "$ADDON_ROOT" ]]; then
   cp "$PACKAGE_DIR/BUILD-INFO.txt" \
       "$PACKAGE_DIR/COMPONENTS.md"    "$ADDON_ROOT/"
    # Copy existing repo files for the tarball
-  for f in addon_config.mk README.md addon_config.mk; do
+  for f in addon_config.mk README.md; do
     [[ -f "$REPO_ROOT/$f" ]] && cp "$REPO_ROOT/$f" "$ADDON_ROOT/"
   done
 else

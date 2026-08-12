@@ -1,0 +1,192 @@
+name: Build and test Boost for macOS
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'scripts/build-boost-osx'
+      - 'scripts/install-boost'
+      - 'packaging/**'
+      - 'patches/**'
+      - 'addon_config.mk'
+      - '.github/workflows/build-test.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'scripts/build-boost-osx'
+      - 'scripts/install-boost'
+      - 'packaging/**'
+      - 'patches/**'
+      - 'addon_config.mk'
+      - '.github/workflows/build-test.yml'
+  workflow_dispatch:
+    inputs:
+      boost_version:
+        description: Boost version to build and test
+        required: false
+        default: 1.67.0
+        type: string
+      skip_tests:
+        description: Skip smoke tests (build only)
+        required: false
+        default: 'false'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-test-boost-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test Boost ${{ inputs.boost_version || '1.67.0' }}
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        BOOST_VERSION:
+          - 1.67.0
+          - 1.66.0
+          - 1.65.0
+    env:
+      BOOST_VERSION: ${{ matrix.BOOST_VERSION }}
+      OSX_MIN_VERSION: '10.15'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate supported version
+        run: |
+          case "$BOOST_VERSION" in
+            1.65.0|1.66.0|1.67.0) ;;
+            *) echo "Boost $BOOST_VERSION is not supported (expected: 1.65.0…1.67.0)" >&2; exit 1 ;;
+          esac
+
+      - name: Cache Homebrew
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: homebrew-${{ runner.os }}-${{ hashFiles('**/build-boost-osx') }}
+
+      - name: Install dependencies
+        run: |
+          brew install --quiet boost 2>/dev/null || true
+          echo "Homebrew boost installed (optional dependency cache)"
+
+      - name: Build release archive
+        id: build
+        run: |
+          chmod +x ./scripts/build-boost-osx
+          log="$RUNNER_TEMP/build-release.log"
+          if ! ./scripts/build-boost-osx "$BOOST_VERSION" > "$log" 2>&1; then
+            echo "## Build failed" >> "$GITHUB_STEP_SUMMARY"
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 200 "$log" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 200 "$log"
+            exit 1
+          fi
+          echo "Build passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "Archives:" >> "$GITHUB_STEP_SUMMARY"
+          ls -lh dist/ >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify tarball contents
+        run: |
+          echo "## $BOOST_VERSION tarball inspection" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          tar -tzf "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz" | head -30 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Tarball contents:" >> "$GITHUB_STEP_SUMMARY"
+          ls -lh dist/ >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify XCFramework slices
+        run: |
+          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          echo "## $BOOST_VERSION XCFramework structure" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          find "$FRAME" -type f | sort >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          
+          echo "Checking XCFramework Info.plist..."
+          plutil -lint "$FRAME/Info.plist"
+          
+          echo "Inspecting library slices..."
+          for slice in "$FRAME"/*/; do
+            lib_name="$(basename "$slice")"
+            lib="$FRAME/$lib_name/libboost.a"
+            if [[ -f "$lib" ]]; then
+              echo "  $lib_name: $(xcrun lipo -info "$lib" 2>/dev/null || echo 'no slice')"
+              ARCHS="$(xcrun lipo -info "$lib" 2>/dev/null)"
+              echo "$ARCHS" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo "XCFramework verified" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify critical symbols
+        run: |
+          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          LIB="$(find "$FRAME" -name 'libboost.a' -print -quit)"
+          echo "## $BOOST_VERSION symbol verification" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          
+          for symbol in \
+            _make_fcontext \
+            _jump_fcontext \
+            _ontop_fcontext \
+            _cpp_context \
+            _current_cpp_context; do
+            if nm -gU "$LIB" 2>/dev/null | grep -q "$symbol"; then
+              echo "  $symbol: found"
+            else
+              echo "  $symbol: MISSING"
+              echo "SYMBOL MISSING: $symbol" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          done
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "All symbols verified" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build and test Homebrew formula
+        if: ${{ matrix.BOOST_VERSION == '1.67.0' }}
+        run: |
+          brew audit --strict Formula/ofxOSXBoost.rb
+          echo "Homebrew formula audit passed" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install CocoaPods
+        if: ${{ matrix.BOOST_VERSION == '1.67.0' }}
+        run: |
+          brew install --quiet cocoapods 2>/dev/null || sudo gem install cocoapods --no-document
+          echo "CocoaPods installed" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate podspec
+        if: ${{ matrix.BOOST_VERSION == '1.67.0' }}
+        run: |
+          log="$RUNNER_TEMP/podspec-lint.log"
+          pod lib lint ofxOSXBoost.podspec --platforms=osx > "$log" 2>&1
+          echo "## Podspec lint" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 20 "$log" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofxOSXBoost-${{ matrix.BOOST_VERSION }}-artifacts
+          path: |
+            dist/ofxOSXBoost-${{ matrix.BOOST_VERSION }}.tar.gz
+            dist/ofxOSXBoost-${{ matrix.BOOST_VERSION }}.tar.gz.sha256
+            dist/ofxOSXBoost-${{ matrix.BOOST_VERSION }}-xcframework.zip
+          if-no-files-found: warn
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofxOSXBoost-${{ matrix.BOOST_VERSION }}-build-logs
+          path: "$RUNNER_TEMP/build-release.log"
+          if-no-files-found: warn

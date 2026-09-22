@@ -1,0 +1,19 @@
+diff --git a/libs/locale/build/Jamfile.v2 b/libs/locale/build/Jamfile.v2
+--- a/libs/locale/build/Jamfile.v2
++++ b/libs/locale/build/Jamfile.v2
+@@ -251,7 +251,12 @@ rule configure-full ( properties * : flags-only )
+ 
+     if ! <boost.locale.iconv>off in $(properties)
+     {
+-        # See if iconv is bundled with standard library.
+-        if [ configure.builds $(internal_iconv_target) : $(properties) : "iconv (libc)" ]
++        # iconv is provided by libSystem on macOS. Configure probes cannot run
++        # an Intel executable while cross-building that slice on Apple Silicon.
++        if <target-os>darwin in $(properties)
++        {
++            found-iconv = true ;
++        }
++        else if [ configure.builds $(internal_iconv_target) : $(properties) : "iconv (libc)" ]
+         {
+             found-iconv = true ;
+         } else if [ configure.builds $(external_iconv_target) : $(properties) : "iconv (separate)" ]

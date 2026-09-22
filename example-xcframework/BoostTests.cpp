@@ -1,0 +1,362 @@
+#include "BoostTests.hpp"
+
+#include <boost/version.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/atomic.hpp>
+#include <boost/chrono.hpp>
+#if BOOST_VERSION >= 106500
+#include <boost/context/detail/fcontext.hpp>
+#include <boost/coroutine2/coroutine.hpp>
+#endif
+#include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/locale.hpp>
+#include <boost/random/random_device.hpp>
+#include <boost/regex.hpp>
+#if BOOST_VERSION < 106900
+#include <boost/signal.hpp>
+#else
+#include <boost/signals2.hpp>
+#endif
+#include <boost/system/error_code.hpp>
+#include <boost/thread.hpp>
+
+#if BOOST_VERSION >= 106600
+#include <boost/beast/http.hpp>
+#include <boost/callable_traits.hpp>
+#include <boost/mp11.hpp>
+#endif
+#if BOOST_VERSION >= 106700
+#include <boost/contract/assert.hpp>
+#include <boost/hof.hpp>
+#endif
+#if BOOST_VERSION >= 106800
+#include <boost/yap/yap.hpp>
+#endif
+#if BOOST_VERSION >= 107000
+#include <boost/histogram.hpp>
+#include <boost/outcome.hpp>
+#endif
+#if BOOST_VERSION >= 107100
+#include <boost/variant2/variant.hpp>
+#endif
+
+#include <cstdint>
+#include <exception>
+#include <sstream>
+#include <type_traits>
+#include <vector>
+
+namespace {
+
+#if BOOST_VERSION >= 106500
+using boost::context::detail::fcontext_t;
+using boost::context::detail::jump_fcontext;
+using boost::context::detail::make_fcontext;
+using boost::context::detail::ontop_fcontext;
+using boost::context::detail::transfer_t;
+
+struct ContextState {
+    fcontext_t caller{};
+    int visits = 0;
+    volatile std::uint64_t canary[64]{};
+    bool ontopVisited = false;
+};
+
+transfer_t contextOntop(transfer_t transfer)
+{
+    ContextState *state = static_cast<ContextState *>(transfer.data);
+    state->ontopVisited = true;
+    return transfer;
+}
+
+void contextEntry(transfer_t transfer)
+{
+    ContextState *state = static_cast<ContextState *>(transfer.data);
+    state->caller = transfer.fctx;
+
+    for (std::size_t i = 0; i < 64; ++i) {
+        state->canary[i] = 0xC0FFEE00ULL + i;
+    }
+
+    for (;;) {
+        ++state->visits;
+        for (std::size_t i = 0; i < 64; ++i) {
+            if (state->canary[i] != 0xC0FFEE00ULL + i) {
+                state->visits = -1;
+                break;
+            }
+        }
+        transfer = jump_fcontext(state->caller, state);
+        state->caller = transfer.fctx;
+    }
+}
+
+bool testContext(std::string &detail)
+{
+    const std::size_t stackSize = 64 * 1024;
+    std::vector<unsigned char> stack(stackSize);
+    ContextState state;
+
+    fcontext_t child =
+        make_fcontext(stack.data() + stack.size(), stack.size(), contextEntry);
+    transfer_t transfer = jump_fcontext(child, &state);
+    child = transfer.fctx;
+    transfer = jump_fcontext(child, &state);
+    child = transfer.fctx;
+    transfer = ontop_fcontext(child, &state, contextOntop);
+    child = transfer.fctx;
+    (void)child;
+
+    detail = "two jumps, ontop_fcontext, then resumed child";
+    return state.visits == 3 && state.ontopVisited;
+}
+
+bool testCoroutine2(std::string &detail)
+{
+    using Coroutine = boost::coroutines2::coroutine<int>;
+    Coroutine::pull_type source([](Coroutine::push_type &sink) {
+        sink(21);
+        sink(42);
+    });
+
+    std::vector<int> values;
+    for (int value : source) {
+        values.push_back(value);
+    }
+
+    detail = "Coroutine2 yielded 21, 42";
+    return values.size() == 2 && values[0] == 21 && values[1] == 42;
+}
+#endif
+
+bool testPackagedLibraries(std::string &detail)
+{
+    const boost::filesystem::path path("/tmp/ofxiOSBoost/example.txt");
+    const boost::regex expected("example\\.txt");
+    detail = "Filesystem and Regex linked";
+    return boost::regex_match(path.filename().string(), expected);
+}
+
+bool testSystemAndChrono(std::string &detail)
+{
+    const boost::system::error_code error(
+        2, boost::system::generic_category());
+    const auto start = boost::chrono::steady_clock::now();
+    const auto finish = boost::chrono::steady_clock::now();
+    detail = "error_code category and steady_clock";
+    return error.value() == 2 && finish >= start;
+}
+
+bool testDateTime(std::string &detail)
+{
+    using namespace boost::gregorian;
+    const date releaseDay(2017, Sep, 7);
+    detail = "Gregorian date arithmetic";
+    return releaseDay + days(1) == date(2017, Sep, 8);
+}
+
+bool testRandom(std::string &detail)
+{
+    boost::random::random_device source;
+    const auto value = source();
+    detail = "random_device produced native entropy";
+    return value >= source.min() && value <= source.max();
+}
+
+bool testThreadAndAtomic(std::string &detail)
+{
+    boost::atomic<int> counter(0);
+    const auto increment = [&counter] {
+        for (int i = 0; i < 1000; ++i) {
+            ++counter;
+        }
+    };
+    boost::thread first(increment);
+    boost::thread second(increment);
+    first.join();
+    second.join();
+    detail = "two joined threads and 2,000 atomic increments";
+    return counter.load() == 2000;
+}
+
+bool testSignals(std::string &detail)
+{
+#if BOOST_VERSION < 106900
+    boost::signal<int(int)> signal;
+#else
+    boost::signals2::signal<int(int)> signal;
+#endif
+    signal.connect([](int value) { return value + 1; });
+    signal.connect([](int value) { return value * 2; });
+#if BOOST_VERSION < 106900
+    const int result = signal(21);
+    detail = "two connected Signals slots emitted";
+    return result == 42;
+#else
+    const boost::optional<int> result = signal(21);
+    detail = "two connected Signals2 slots emitted";
+    return result && *result == 42;
+#endif
+}
+
+bool testGraph(std::string &detail)
+{
+    using Graph = boost::adjacency_list<boost::vecS, boost::vecS,
+                                        boost::undirectedS>;
+    Graph graph(4);
+    add_edge(0, 1, graph);
+    add_edge(1, 2, graph);
+    add_edge(2, 3, graph);
+    detail = "four vertices and three edges";
+    return num_vertices(graph) == 4 && num_edges(graph) == 3;
+}
+
+bool testLocale(std::string &detail)
+{
+    boost::locale::generator generator;
+    const std::locale locale = generator("C");
+    const std::string upper = boost::locale::to_upper("Boost", locale);
+    detail = "C locale generated and case-converted";
+    return upper == "BOOST";
+}
+
+bool testAsio(std::string &detail)
+{
+    boost::asio::io_service service;
+    int callbacks = 0;
+    service.post([&callbacks] { ++callbacks; });
+    service.post([&callbacks] { ++callbacks; });
+    const std::size_t handled = service.run();
+    detail = "two offline io_service callbacks";
+    return callbacks == 2 && handled == 2;
+}
+
+#if BOOST_VERSION >= 106600
+bool testBoost166Headers(std::string &detail)
+{
+    namespace http = boost::beast::http;
+    http::request<http::string_body> request;
+    request.method(http::verb::get);
+    request.target("/status");
+    request.version(11);
+    request.set(http::field::host, "localhost");
+
+    using Function = int (*)(double);
+    using Return = boost::callable_traits::return_type_t<Function>;
+    using Types = boost::mp11::mp_list<int, double, char>;
+
+    detail = "Beast HTTP, CallableTraits, and Mp11";
+    return request.method() == http::verb::get &&
+           request.target() == "/status" &&
+           request[http::field::host] == "localhost" &&
+           std::is_same<Return, int>::value &&
+           boost::mp11::mp_size<Types>::value == 3;
+}
+#endif
+
+#if BOOST_VERSION >= 106700
+bool testBoost167Features(std::string &detail)
+{
+    BOOST_CONTRACT_ASSERT(2 + 2 == 4);
+    const auto sum = boost::hof::placeholders::_1 +
+                     boost::hof::placeholders::_2;
+    detail = "Contract assertion and HOF placeholder expression";
+    return sum(19, 23) == 42;
+}
+#endif
+
+#if BOOST_VERSION >= 106800
+bool testBoost168Features(std::string &detail)
+{
+    const auto left = boost::yap::make_terminal(19);
+    const auto expression = left + 23;
+    detail = "YAP expression template evaluated";
+    return boost::yap::evaluate(expression) == 42;
+}
+#endif
+
+#if BOOST_VERSION >= 107000
+bool testBoost170Features(std::string &detail)
+{
+    auto histogram = boost::histogram::make_histogram(
+        boost::histogram::axis::regular<>(2, 0.0, 2.0));
+    histogram(0.25);
+    histogram(1.25);
+
+    boost::outcome_v2::result<int> outcome = 42;
+    detail = "Histogram bins and Outcome result value";
+    return histogram.at(0) == 1 && histogram.at(1) == 1 &&
+           outcome.has_value() && outcome.value() == 42;
+}
+#endif
+
+#if BOOST_VERSION >= 107100
+bool testBoost171Features(std::string &detail)
+{
+    boost::variant2::variant<int, std::string> value = 42;
+    const int first = boost::variant2::visit(
+        [](const auto &item) { return static_cast<int>(item.size()); },
+        boost::variant2::variant<std::string>(std::string("variant2")));
+    detail = "Variant2 alternative selection and visitation";
+    return boost::variant2::holds_alternative<int>(value) &&
+           boost::variant2::get<int>(value) == 42 && first == 8;
+}
+#endif
+
+} // namespace
+
+BoostTestResult runBoostTests()
+{
+    std::ostringstream report;
+    report << "Boost " << BOOST_LIB_VERSION << "\n\n";
+    bool passed = true;
+
+    const auto run = [&](const char *name,
+                         bool (*test)(std::string &)) {
+        std::string detail;
+        bool result = false;
+        try {
+            result = test(detail);
+        } catch (const std::exception &error) {
+            detail = error.what();
+        } catch (...) {
+            detail = "unknown exception";
+        }
+        passed = passed && result;
+        report << (result ? "PASS" : "FAIL") << "  " << name
+               << "\n      " << detail << "\n";
+    };
+
+    run("Packaged libraries", testPackagedLibraries);
+    run("System + Chrono", testSystemAndChrono);
+    run("DateTime", testDateTime);
+    run("Random", testRandom);
+    run("Thread + Atomic", testThreadAndAtomic);
+    run("Signals", testSignals);
+    run("Graph", testGraph);
+    run("Locale", testLocale);
+    run("Asio", testAsio);
+#if BOOST_VERSION >= 106600
+    run("Boost 1.66 headers", testBoost166Headers);
+#endif
+#if BOOST_VERSION >= 106700
+    run("Boost 1.67 features", testBoost167Features);
+#endif
+#if BOOST_VERSION >= 106800
+    run("Boost 1.68 features", testBoost168Features);
+#endif
+#if BOOST_VERSION >= 107000
+    run("Boost 1.70 features", testBoost170Features);
+#endif
+#if BOOST_VERSION >= 107100
+    run("Boost 1.71 features", testBoost171Features);
+#endif
+#if BOOST_VERSION >= 106500
+    run("Boost.Context", testContext);
+    run("Boost.Coroutine2", testCoroutine2);
+#endif
+    report << "\n" << (passed ? "ALL TESTS PASSED" : "TESTS FAILED");
+    return {passed, report.str()};
+}

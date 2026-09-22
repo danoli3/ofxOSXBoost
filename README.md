@@ -1,10 +1,10 @@
-# ofxOSXBoost for Boost 1.61.0+ — macOS (deployment target 10.15 / Catalina)
+# ofxOSXBoost for Boost 1.92.0 — macOS 10.15+
 
 ## Boost C++ Libraries — pre-compiled XCFramework for macOS
 
 **Deploy target**: macOS 10.15 (Catalina)  
 **Architectures**: x86_64 + arm64 (universal)  
-**C++ Standard**: c++11+  
+**C++ Standard**: C++20
 
 ### What is this?
 
@@ -20,15 +20,15 @@ Boost C++ libraries packaged as a static XCFramework for macOS (x86_64 + arm64) 
 | 1.64.0 | macOS 10.9+ | Adds `regex_extended`, `signals2` |
 | 1.65.0 | macOS 10.15+ | Adds `context`, `coroutine`, `coroutine2`, `call_traits`, `mp11` |
 | 1.66.0 | macOS 10.15+ | Adds `callable_traits`, `beast` (experimental HTTP library) |
+| 1.67.0 | macOS 10.15+ | Last historical release in the original automation |
+| 1.92.0 | macOS 10.15+ | C++20 universal XCFramework, SwiftPM, CocoaPods, and Homebrew |
 
 ### Installation
 
 The package structure is flat and relocatable:
 
-- `libs/boost/include/` — complete Boost header tree  
-- `libs/boost/lib/` — platform-native `libboost.a` (x86_64 + arm64 fat static)  
+- `libs/boost/osx/boost.xcframework/` — complete headers and universal `libboost.a`
 - `libs/boost/cmake/` — CMake `find_package` config  
-- `ofsxOSXBoost/` — the compiled XCFramework  
 
 ### How to Build
 
@@ -36,26 +36,27 @@ You don't need to — pre-compiled libraries are included. If you want to build 
 
 ```bash
 cd ofxOSXBoost
-./scripts/build-boost-osx       # default: 1.66.0
-BOOST_VERSION=1.65.0 ./scripts/build-boost-osx  # specific version
+./scripts/build-boost-osx       # default: 1.92.0
 ```
 
 Configure via environment variables:
 
-- **`BOOST_VERSION`** — Boost version to build (default: `1.66.0`, supported: 1.61.0 … 1.66.0)  
-- **`BOOST_LIBS`** — space-separated library names (default: `random regex graph chrono thread signals filesystem system date_time`)  
+- **`BOOST_VERSION`** — Boost version to build (default: `1.92.0`)
+- **`BOOST_LIBS`** — optional space-separated override of the versioned compiled set
 - **`OSX_MIN_VERSION`** — macOS deployment target (default: `10.15`)  
 - **`JOBS`** — parallel build threads (default: number of logical CPU cores)  
 - **`DIST_DIR`** — output directory for tarballs and XCFramework  
 
-The build script downloads the source from [archives.boost.io](https://archives.boost.io), applies patches for Boost 1.61.0+, builds static libraries, and produces a flat relocatable package.
+The builder verifies the official Boost source SHA-256, compiles arm64 and
+x86_64 independently with C++20, creates a universal XCFramework, and emits
+checksummed release artifacts.
 
 #### Install Script
 
 Install a released Boost version from the tarball (no rebuild needed):
 
 ```bash
-./scripts/install-boost 1.66.0
+./scripts/install-boost 1.92.0
 ```
 
 ### How to Use with openFrameworks
@@ -87,7 +88,7 @@ Include path is `$SRCROOT/ofxOSXBoost/libs/boost/include`; library path is `$SRC
 **With CocoaPods:**
 
 ```ruby
-pod 'ofxOSXBoost', '~> 1.66.0'
+pod 'ofxOSXBoost', '~> 1.92.0'
 ```
 
 ### Packaging
@@ -96,8 +97,9 @@ The repository includes templates and manifests for multiple distribution format
 
 - **CMake** — `packaging/cmake/ofxOSXBoostConfig.cmake.in`  
 - **pkg-config** — `packaging/pkgconfig/ofxOSXBoost-osx.pc`  
-- **Swift Package Manager** — `packaging/swiftpm/Module/` (module map)  
+- **Swift Package Manager** — root `Package.swift` plus a two-architecture consumer gate
 - **CocoaPods** — `ofxOSXBoost.podspec` + `packaging/cocoapods/`  
+- **Homebrew** — audited formula template in `packaging/homebrew/`
 
 ### Component Manifests
 
@@ -111,6 +113,7 @@ Library selections evolve by Boost version. Full component manifests are in `pac
 | `1.64.0-components.tsv` | Adds `regex_extended`, `signals2` |
 | `1.65.0-components.tsv` | Adds `context`, `coroutine`, `coroutine2`, `call_traits`, `mp11` |
 | `1.66.0-components.tsv` | Adds `callable_traits`, `beast` (experimental HTTP) |
+| `1.92.0-components.tsv` | C++20 compiled set and explicit exclusions |
 
 ### License
 
@@ -120,6 +123,7 @@ See the [Boost License](https://www.boost.org/users/license.html) — BSL-1.0. A
 
 | Version | Date |
 |---|---|
+| 1.92.0 | August 2026 (C++20, macOS 10.15, universal x86_64 + arm64) |
 | 1.66.0 | August 2026 (macOS 10.15, universal x86_64 + arm64) |
 | 1.65.0 | C++14 feature set — context, coroutines, Mp11 |
 | 1.61.0 | Original macOS release |

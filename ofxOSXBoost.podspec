@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name                        = "ofxOSXBoost"
-  s.version                     = "1.61.0"
+  s.version                     = "1.92.0"
   s.summary                     = "Boost C++ libraries precompiled for macOS"
   s.description                 = <<-DESC
 Boost C++ libraries packaged as a static XCFramework for macOS (x86_64 + arm64)
@@ -8,7 +8,7 @@ using the macOS 10.15+ deployment target.  The package contains the complete
 Boost header tree and a documented selection of compiled Boost libraries.
                              DESC
   s.homepage                    = "https://github.com/danoli3/ofxOSXBoost"
-  s.documentation_url           = "https://github.com/danoli3/ofxOSXBoost/releases/tag/1.61.0"
+  s.documentation_url           = "https://github.com/danoli3/ofxOSXBoost/releases/tag/1.92.0"
   s.license                     = { :type => "BSL-1.0", :file => "LICENSE.md" }
   s.author                      = { "Danoli3" => "danoli3@gmail.com" }
 

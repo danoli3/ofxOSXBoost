@@ -1,0 +1,36 @@
+# status	library	note
+# upstream	https://www.boost.org/releases/1.92.0/
+included	chrono	Compiled date and time duration support.
+included	date_time	Compiled date/time library retained for build compatibility.
+included	filesystem	Compiled Filesystem support.
+included	graph	Compiled Graph algorithms.
+included	locale	Compiled localization backends without optional ICU packaging.
+included	random	Compiled random_device implementation.
+included	thread	Portable threading primitives.
+included	context	Architecture-specific fcontext implementation.
+included	nowide	Compiled UTF-8 adapters.
+included	json	Compiled parser and DOM support.
+included	serialization	Compiled archive support.
+included	url	Compiled URL parser.
+included	container	Compiled polymorphic memory resources.
+included	log	Compiled logging core and setup support.
+included	stacktrace	Compiled portable basic backend only.
+included	timer	Compiled CPU timer.
+included	type_erasure	Compiled dynamic binding support.
+included	cobalt	Compiled C++20 coroutine library.
+included	charconv	Compiled locale-independent numeric conversion library.
+excluded	atomic	No explicit top-level archive; used by compiled dependencies.
+excluded	contract	Optional compiled mode is not packaged.
+excluded	coroutine	Deprecated compiled library; Context is packaged instead.
+excluded	fiber	Compiled scheduler is outside this package's tested runtime scope.
+excluded	graph_parallel	Requires MPI.
+excluded	iostreams	Requires explicit optional compression dependencies.
+excluded	math	Modern header APIs are packaged; legacy compiled wrappers are omitted.
+excluded	mpi	Requires an MPI runtime.
+excluded	process	Compiled Process support requires a dedicated process-runtime audit.
+excluded	program_options	Command-line parsing is not part of the selected binary set.
+excluded	python	Requires a separately packaged Python runtime.
+excluded	regex	Header-only in the selected C++20 configuration.
+excluded	system	Header-only in Boost 1.92.
+excluded	test	Intended for test executables.
+excluded	wave	C/C++ preprocessing toolchain is not normally needed at runtime.

@@ -1,0 +1,25 @@
+class Ofxosxboost < Formula
+  desc "Boost C++ libraries precompiled for macOS"
+  homepage "https://github.com/danoli3/ofxOSXBoost"
+  url "https://github.com/danoli3/ofxOSXBoost/releases/download/@BOOST_VERSION@/ofxOSXBoost-@BOOST_VERSION@.tar.gz"
+  sha256 "@ARCHIVE_SHA@"
+  license "BSL-1.0"
+
+  def install
+    libexec.install Dir["*"]
+  end
+
+  test do
+    source = testpath/"smoke.cpp"
+    source.write <<~CPP
+      #include <boost/version.hpp>
+      #include <boost/filesystem/path.hpp>
+      int main() { return boost::filesystem::path("ok").string() == "ok" ? 0 : 1; }
+    CPP
+    framework = libexec/"libs/boost/osx/boost.xcframework/macos-arm64_x86_64"
+    system ENV.cxx, "-std=c++20", "-mmacosx-version-min=10.15",
+           "-I#{framework}/Headers", source, framework/"libboost.a",
+           "-o", testpath/"smoke"
+    system testpath/"smoke"
+  end
+end

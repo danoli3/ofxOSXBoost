@@ -40,6 +40,9 @@ xcuserdata/
 *.bz2
 republish.sh
 AGENTS.md
+/.build/
 example-xcframework/boost.xcframework/macos-arm64_x86_64/Headers/boost/accumulators/statistics/covariance.hpp
 /example-xcframework/boost.xcframework
 /libs/boost.xcframework
+/example-xcframework/ofxOSXBoostContextExample.xcodeproj/project.xcworkspace
+example-xcframework/ofxOSXBoostContextExample.xcodeproj/xcshareddata/xcschemes/ofxOSXBoostContextExample.xcscheme

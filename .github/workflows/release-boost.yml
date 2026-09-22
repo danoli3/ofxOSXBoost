@@ -49,7 +49,11 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/ofxosxboost-example" CODE_SIGNING_ALLOWED=NO build
           OFXOSXBOOST_CI=1 "$RUNNER_TEMP/ofxosxboost-example/Build/Products/Release/ofxOSXBoostContextExample.app/Contents/MacOS/ofxOSXBoostContextExample"
           ./example-swift-package/build.sh "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz"
-          pod lib lint dist/ofxOSXBoost.podspec --platforms=osx
+          mkdir -p "$RUNNER_TEMP/pod-lint"
+          tar -xzf "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz" -C "$RUNNER_TEMP/pod-lint"
+          package="$RUNNER_TEMP/pod-lint/ofxOSXBoost-$BOOST_VERSION"
+          cp dist/ofxOSXBoost.podspec "$package/ofxOSXBoost.podspec"
+          pod lib lint "$package/ofxOSXBoost.podspec" --platforms=osx
       - name: Audit and clean-test Homebrew formula
         run: |
           sha="$(awk '{print $1}' "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz.sha256")"

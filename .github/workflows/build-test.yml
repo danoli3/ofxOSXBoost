@@ -103,7 +103,7 @@ jobs:
           FRAME="libs/boost/osx/boost.xcframework"
           echo "## $BOOST_VERSION XCFramework structure" >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          find "$FRAME" -type f | sort >> "$GITHUB_STEP_SUMMARY"
+          find "$FRAME" -maxdepth 2 -type f | sort >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           
           echo "Checking XCFramework Info.plist..."
@@ -127,20 +127,16 @@ jobs:
           LIB="$(find "$FRAME" -name 'libboost.a' -print -quit)"
           echo "## $BOOST_VERSION symbol verification" >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          
-          for symbol in \
-            _make_fcontext \
-            _jump_fcontext \
-            _ontop_fcontext \
-            _cpp_context \
-            _current_cpp_context; do
-            if nm -gU "$LIB" 2>/dev/null | grep -q "$symbol"; then
-              echo "  $symbol: found"
-            else
-              echo "  $symbol: MISSING"
-              echo "SYMBOL MISSING: $symbol" >> "$GITHUB_STEP_SUMMARY"
-              exit 1
-            fi
+          for arch in arm64 x86_64; do
+            xcrun nm -arch "$arch" -gU "$LIB" > "$RUNNER_TEMP/$arch.nm"
+            for symbol in _make_fcontext _jump_fcontext _ontop_fcontext boost8charconv; do
+              if grep -Fq "$symbol" "$RUNNER_TEMP/$arch.nm"; then
+                echo "  $arch $symbol: found" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "  $arch $symbol: MISSING" >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+              fi
+            done
           done
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "All symbols verified" >> "$GITHUB_STEP_SUMMARY"
@@ -158,7 +154,11 @@ jobs:
       - name: Validate podspec
         run: |
           log="$RUNNER_TEMP/podspec-lint.log"
-          pod lib lint ofxOSXBoost.podspec --platforms=osx > "$log" 2>&1
+          mkdir -p "$RUNNER_TEMP/pod-lint"
+          tar -xzf "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz" -C "$RUNNER_TEMP/pod-lint"
+          package="$RUNNER_TEMP/pod-lint/ofxOSXBoost-$BOOST_VERSION"
+          cp dist/ofxOSXBoost.podspec "$package/ofxOSXBoost.podspec"
+          pod lib lint "$package/ofxOSXBoost.podspec" --platforms=osx > "$log" 2>&1
           echo "## Podspec lint" >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           tail -n 20 "$log" >> "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'scripts/build-boost-osx'
+      - 'scripts/build-boost-osx.sh'
       - 'scripts/install-boost'
       - 'packaging/**'
       - 'patches/**'
@@ -16,6 +17,7 @@ on:
       - master
     paths:
       - 'scripts/build-boost-osx'
+      - 'scripts/build-boost-osx.sh'
       - 'scripts/install-boost'
       - 'packaging/**'
       - 'patches/**'
@@ -98,7 +100,7 @@ jobs:
 
       - name: Verify XCFramework slices
         run: |
-          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          FRAME="libs/boost/osx/boost.xcframework"
           echo "## $BOOST_VERSION XCFramework structure" >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           find "$FRAME" -type f | sort >> "$GITHUB_STEP_SUMMARY"
@@ -121,7 +123,7 @@ jobs:
 
       - name: Verify critical symbols
         run: |
-          FRAME="dist/ofxOSXBoost-$BOOST_VERSION/boost.xcframework"
+          FRAME="libs/boost/osx/boost.xcframework"
           LIB="$(find "$FRAME" -name 'libboost.a' -print -quit)"
           echo "## $BOOST_VERSION symbol verification" >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"

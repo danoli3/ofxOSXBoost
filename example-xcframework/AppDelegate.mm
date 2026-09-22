@@ -1,56 +1,52 @@
-#import <UIKit/UIKit.h>
+#import <AppKit/AppKit.h>
 
 #include "BoostTests.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
-@property(nonatomic, strong) UIWindow *window;
+@interface AppDelegate : NSObject <NSApplicationDelegate>
+@property(nonatomic, strong) NSWindow *window;
 @end
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application
-    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
-    (void)application;
-    (void)launchOptions;
+    (void)notification;
 
     BoostTestResult result = runBoostTests();
     NSString *report = [NSString stringWithUTF8String:result.report.c_str()];
     NSLog(@"\n%@", report);
 
-    if (std::getenv("OFXIOSBOOST_CI") != nullptr) {
-        std::fprintf(stdout, "%s\n", result.report.c_str());
-        std::fflush(stdout);
-        std::_Exit(result.passed ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
+    self.window = [[NSWindow alloc]
+        initWithContentRect:NSMakeRect(0, 0, 760, 520)
+                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                            NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+                    backing:NSBackingStoreBuffered
+                      defer:NO];
+    self.window.title = @"ofxOSXBoost tests";
+    self.window.backgroundColor = result.passed
+        ? [NSColor colorWithCalibratedRed:0.90 green:1.0 blue:0.92 alpha:1.0]
+        : [NSColor colorWithCalibratedRed:1.0 green:0.90 blue:0.90 alpha:1.0];
 
-    UIViewController *controller = [[UIViewController alloc] init];
-    controller.view.backgroundColor = result.passed
-        ? [UIColor colorWithRed:0.90 green:1.0 blue:0.92 alpha:1.0]
-        : [UIColor colorWithRed:1.0 green:0.90 blue:0.90 alpha:1.0];
-
-    UITextView *textView = [[UITextView alloc] initWithFrame:CGRectZero];
-    textView.translatesAutoresizingMaskIntoConstraints = NO;
+    NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:self.window.contentView.bounds];
+    scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    scrollView.hasVerticalScroller = YES;
+    NSTextView *textView = [[NSTextView alloc] initWithFrame:scrollView.bounds];
     textView.editable = NO;
-    textView.backgroundColor = UIColor.clearColor;
-    textView.textColor = UIColor.blackColor;
-    textView.font = [UIFont monospacedSystemFontOfSize:16.0
-                                              weight:UIFontWeightRegular];
-    textView.text = report;
-    [controller.view addSubview:textView];
-    [NSLayoutConstraint activateConstraints:@[
-        [textView.leadingAnchor constraintEqualToAnchor:controller.view.safeAreaLayoutGuide.leadingAnchor constant:16.0],
-        [textView.trailingAnchor constraintEqualToAnchor:controller.view.safeAreaLayoutGuide.trailingAnchor constant:-16.0],
-        [textView.topAnchor constraintEqualToAnchor:controller.view.safeAreaLayoutGuide.topAnchor constant:16.0],
-        [textView.bottomAnchor constraintEqualToAnchor:controller.view.safeAreaLayoutGuide.bottomAnchor constant:-16.0]
-    ]];
+    textView.font = [NSFont monospacedSystemFontOfSize:14.0 weight:NSFontWeightRegular];
+    textView.string = report;
+    scrollView.documentView = textView;
+    self.window.contentView = scrollView;
+    [self.window center];
+    [self.window makeKeyAndOrderFront:nil];
+    [NSApp activateIgnoringOtherApps:YES];
+}
 
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-    self.window.rootViewController = controller;
-    [self.window makeKeyAndVisible];
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    (void)sender;
     return YES;
 }
 
@@ -59,6 +55,14 @@
 int main(int argc, char *argv[])
 {
     @autoreleasepool {
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass(AppDelegate.class));
+        if (std::getenv("OFXOSXBOOST_CI") != nullptr) {
+            BoostTestResult result = runBoostTests();
+            std::fprintf(stdout, "%s\n", result.report.c_str());
+            return result.passed ? EXIT_SUCCESS : EXIT_FAILURE;
+        }
+        NSApplication *application = [NSApplication sharedApplication];
+        AppDelegate *delegate = [[AppDelegate alloc] init];
+        application.delegate = delegate;
+        return NSApplicationMain(argc, (const char **)argv);
     }
 }

@@ -9,8 +9,9 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* AppDelegate.mm */; };
 		A10000000000000000000002 /* BoostTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* BoostTests.cpp */; };
+		BF24416C30629D400005452A /* boost.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF24416B30629D400005452A /* boost.xcframework */; };
+		BF24416E3062A0660005452A /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF24416D3062A0660005452A /* AppKit.framework */; };
 		BF5B2E24302990E500DA7BF7 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF5B2E23302990E500DA7BF7 /* CoreGraphics.framework */; };
-		BF5B2E283029EF2300DA7BF7 /* boost.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF5B2E273029EF2300DA7BF7 /* boost.xcframework */; };
 		BF5B2E2A3029EF9700DA7BF7 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BF5B2E293029EF9700DA7BF7 /* libiconv.tbd */; };
 /* End PBXBuildFile section */
 
@@ -20,8 +21,9 @@
 		A20000000000000000000003 /* BoostTests.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BoostTests.hpp; sourceTree = "<group>"; };
 		A20000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000006 /* ofxOSXBoostContextExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ofxOSXBoostContextExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF24416B30629D400005452A /* boost.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = boost.xcframework; path = ../libs/boost/osx/boost.xcframework; sourceTree = SOURCE_ROOT; };
+		BF24416D3062A0660005452A /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		BF5B2E23302990E500DA7BF7 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		BF5B2E273029EF2300DA7BF7 /* boost.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = boost.xcframework; path = ../libs/boost/ios/boost.xcframework; sourceTree = SOURCE_ROOT; };
 		BF5B2E293029EF9700DA7BF7 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -30,9 +32,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF24416E3062A0660005452A /* AppKit.framework in Frameworks */,
 				BF5B2E2A3029EF9700DA7BF7 /* libiconv.tbd in Frameworks */,
+				BF24416C30629D400005452A /* boost.xcframework in Frameworks */,
 				BF5B2E24302990E500DA7BF7 /* CoreGraphics.framework in Frameworks */,
-				BF5B2E283029EF2300DA7BF7 /* boost.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,9 +65,10 @@
 		BF5B2E203029909900DA7BF7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				BF24416D3062A0660005452A /* AppKit.framework */,
+				BF24416B30629D400005452A /* boost.xcframework */,
 				BF5B2E293029EF9700DA7BF7 /* libiconv.tbd */,
 				BF5B2E23302990E500DA7BF7 /* CoreGraphics.framework */,
-				BF5B2E273029EF2300DA7BF7 /* boost.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -147,7 +151,7 @@
 		A80000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 			};
@@ -156,7 +160,7 @@
 		A80000000000000000000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 			};
@@ -170,21 +174,22 @@
 				DEVELOPMENT_TEAM = KM34QPF66V;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-framework",
+					AppKit,
 					"-liconv",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.openframeworks.ofxiOSBoostContextExample;
+				PRODUCT_BUNDLE_IDENTIFIER = org.openframeworks.ofxOSXBoostContextExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -196,21 +201,22 @@
 				DEVELOPMENT_TEAM = KM34QPF66V;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-framework",
+					AppKit,
 					"-liconv",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.openframeworks.ofxiOSBoostContextExample;
+				PRODUCT_BUNDLE_IDENTIFIER = org.openframeworks.ofxOSXBoostContextExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

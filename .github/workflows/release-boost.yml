@@ -44,6 +44,10 @@ jobs:
       - name: Build native consumers
         run: |
           ./example-xcframework/build.sh "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz"
+          xcodebuild -project example-xcframework/ofxOSXBoostContextExample.xcodeproj \
+            -scheme ofxOSXBoostContextExample -configuration Release -sdk macosx \
+            -derivedDataPath "$RUNNER_TEMP/ofxosxboost-example" CODE_SIGNING_ALLOWED=NO build
+          OFXOSXBOOST_CI=1 "$RUNNER_TEMP/ofxosxboost-example/Build/Products/Release/ofxOSXBoostContextExample.app/Contents/MacOS/ofxOSXBoostContextExample"
           ./example-swift-package/build.sh "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz"
           pod lib lint dist/ofxOSXBoost.podspec --platforms=osx
       - name: Audit and clean-test Homebrew formula
@@ -58,14 +62,16 @@ jobs:
         if: inputs.operation == 'prepare'
         run: |
           checksum="$(swift package compute-checksum "dist/ofxOSXBoost-$BOOST_VERSION-xcframework.zip")"
-          sed -E "s/(checksum: \\")[0-9a-f]{64}(\\")/\\1$checksum\\2/" Package.swift > "$RUNNER_TEMP/Package.swift"
+          sed -E "s/checksum: \"[0-9a-f]{64}\"/checksum: \"$checksum\"/" Package.swift > "$RUNNER_TEMP/Package.swift"
           mv "$RUNNER_TEMP/Package.swift" Package.swift
+          grep -Fq "checksum: \"$checksum\"" Package.swift
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add Package.swift
           git diff --cached --quiet || git commit -m "Finalize Boost $BOOST_VERSION prepared checksum [skip ci]"
+          git push origin HEAD:refs/heads/master
           ./scripts/finalize-prepared-artifacts.sh "$BOOST_VERSION" dist
-          printf 'BOOST_VERSION=%s\\nSOURCE_SHA=%s\\nXCFRAMEWORK_SHA256=%s\\nPREPARATION_RUN_ID=%s\\n' "$BOOST_VERSION" "$(git rev-parse HEAD)" "$checksum" "$GITHUB_RUN_ID" > dist/release-manifest.env
+          printf 'BOOST_VERSION=%s\nSOURCE_SHA=%s\nXCFRAMEWORK_SHA256=%s\nPREPARATION_RUN_ID=%s\n' "$BOOST_VERSION" "$(git rev-parse HEAD)" "$checksum" "$GITHUB_RUN_ID" > dist/release-manifest.env
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: ofxOSXBoost-1.92.0

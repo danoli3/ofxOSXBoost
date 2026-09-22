@@ -345,6 +345,12 @@ Libraries: $BOOST_LIBS
 Excluded compiled libraries: $EXCLUDED_LIBS
 EOF
 
+# Make the freshly built XCFramework available to projects using this checkout.
+LOCAL_FRAME="$REPO_ROOT/libs/boost/osx/boost.xcframework"
+mkdir -p "$(dirname "$LOCAL_FRAME")"
+ditto "$FRAME" "$LOCAL_FRAME"
+echo "  Addon XCFramework: $LOCAL_FRAME"
+
 # XCF zip
 ARCHIVE_NAME="ofxOSXBoost-${BOOST_VERSION}"
 ( cd "$WORK_DIR" && ditto -c -k --sequesterRsrc --keepParent \

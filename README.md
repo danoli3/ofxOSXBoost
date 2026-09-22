@@ -36,7 +36,7 @@ You don't need to — pre-compiled libraries are included. If you want to build 
 
 ```bash
 cd ofxOSXBoost
-./scripts/build-boost-osx       # default: 1.92.0
+./scripts/build-boost-osx.sh    # default: 1.92.0
 ```
 
 Configure via environment variables:

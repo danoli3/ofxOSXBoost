@@ -1,7 +1,8 @@
 #include "BoostTests.hpp"
 
 #include <boost/version.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
 #include <boost/atomic.hpp>
 #include <boost/chrono.hpp>
 #if BOOST_VERSION >= 106500
@@ -224,12 +225,12 @@ bool testLocale(std::string &detail)
 
 bool testAsio(std::string &detail)
 {
-    boost::asio::io_service service;
+    boost::asio::io_context service;
     int callbacks = 0;
-    service.post([&callbacks] { ++callbacks; });
-    service.post([&callbacks] { ++callbacks; });
+    boost::asio::post(service, [&callbacks] { ++callbacks; });
+    boost::asio::post(service, [&callbacks] { ++callbacks; });
     const std::size_t handled = service.run();
-    detail = "two offline io_service callbacks";
+    detail = "two offline io_context callbacks";
     return callbacks == 2 && handled == 2;
 }
 

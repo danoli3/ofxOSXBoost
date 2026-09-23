@@ -141,9 +141,13 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "All symbols verified" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Build and test Homebrew formula
+      - name: Audit Homebrew formula
         run: |
-          brew audit --strict Formula/ofxOSXBoost.rb
+          sha="$(awk '{print $1}' "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz.sha256")"
+          sed -e "s|@BOOST_VERSION@|$BOOST_VERSION|g" -e "s|@ARCHIVE_SHA@|$sha|g" packaging/homebrew/ofxOSXBoost.rb.in > dist/ofxOSXBoost.rb
+          brew tap-new --no-git local/ofxosxboost-ci
+          cp dist/ofxOSXBoost.rb "$(brew --repo local/ofxosxboost-ci)/Formula/ofxOSXBoost.rb"
+          brew audit --strict local/ofxosxboost-ci/ofxosxboost
           echo "Homebrew formula audit passed" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install CocoaPods

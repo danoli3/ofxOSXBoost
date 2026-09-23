@@ -59,5 +59,7 @@ jobs:
       - name: Prepare post-release submissions
         run: |
           pod spec lint dist/ofxOSXBoost.podspec --platforms=osx
-          brew audit --strict dist/ofxOSXBoost.rb
+          brew tap-new --no-git local/ofxosxboost-ci
+          cp dist/ofxOSXBoost.rb "$(brew --repo local/ofxosxboost-ci)/Formula/ofxOSXBoost.rb"
+          brew audit --strict local/ofxosxboost-ci/ofxosxboost
           echo "CocoaPods and Homebrew files are validated but are not submitted automatically."

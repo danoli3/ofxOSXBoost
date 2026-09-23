@@ -58,10 +58,17 @@ jobs:
         run: |
           sha="$(awk '{print $1}' "dist/ofxOSXBoost-$BOOST_VERSION.tar.gz.sha256")"
           sed -e "s|@BOOST_VERSION@|$BOOST_VERSION|g" -e "s|@ARCHIVE_SHA@|$sha|g" packaging/homebrew/ofxOSXBoost.rb.in > dist/ofxOSXBoost.rb
-          brew audit --strict dist/ofxOSXBoost.rb
-          brew install --formula "$(pwd)/dist/ofxOSXBoost.rb"
-          brew test ofxosxboost
-          brew uninstall ofxosxboost
+          tap=local/ofxosxboost-ci
+          formula="$tap/ofxosxboost"
+          brew tap-new --no-git "$tap"
+          tap_formula="$(brew --repo "$tap")/Formula/ofxOSXBoost.rb"
+          cp dist/ofxOSXBoost.rb "$tap_formula"
+          brew audit --strict "$formula"
+          sed -E "s|^  url \".*\"|  url \"file://$(pwd)/dist/ofxOSXBoost-$BOOST_VERSION.tar.gz\"|" "$tap_formula" > "$RUNNER_TEMP/ofxOSXBoost.rb"
+          cp "$RUNNER_TEMP/ofxOSXBoost.rb" "$tap_formula"
+          brew install --formula "$formula"
+          brew test "$formula"
+          brew uninstall "$formula"
       - name: Finalize prepared source and artifacts
         if: inputs.operation == 'prepare'
         run: |

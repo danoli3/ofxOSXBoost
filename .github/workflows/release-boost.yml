@@ -66,9 +66,10 @@ jobs:
           brew audit --strict "$formula"
           sed -E "s|^  url \".*\"|  url \"file://$(pwd)/dist/ofxOSXBoost-$BOOST_VERSION.tar.gz\"|" "$tap_formula" > "$RUNNER_TEMP/ofxOSXBoost.rb"
           cp "$RUNNER_TEMP/ofxOSXBoost.rb" "$tap_formula"
-          brew install --formula "$formula"
+          brew trust --formula "$formula"
+          HOMEBREW_NO_SANDBOX=1 brew install --formula "$formula"
           brew test "$formula"
-          brew uninstall "$formula"
+          HOMEBREW_NO_AUTOREMOVE=1 brew uninstall "$formula"
       - name: Finalize prepared source and artifacts
         if: inputs.operation == 'prepare'
         run: |

@@ -71,7 +71,7 @@ jobs:
         timeout-minutes: 5
         run: |
           "$OF_ROOT/apps/projectGenerator/commandLine/bin/projectGenerator" \
-            -v -p osx -a ofxOSXBoost -o "$OF_ROOT" "$OF_PROJECT"
+            -v -posx -aofxOSXBoost -o"$OF_ROOT" "$OF_PROJECT"
           test -f "$OF_PROJECT/ofxOSXBoostExample.xcodeproj/project.pbxproj"
 
       - name: Build and link openFrameworks example

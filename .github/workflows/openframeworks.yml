@@ -37,10 +37,13 @@ jobs:
     timeout-minutes: 60
     env:
       BOOST_VERSION: 1.92.0
-      OF_ROOT: ${{ runner.temp }}/openFrameworks
-      OF_PROJECT: ${{ runner.temp }}/openFrameworks/apps/myApps/ofxOSXBoostExample
     steps:
       - uses: actions/checkout@v7.0.1
+
+      - name: Configure paths
+        run: |
+          echo "OF_ROOT=$RUNNER_TEMP/openFrameworks" >> "$GITHUB_ENV"
+          echo "OF_PROJECT=$RUNNER_TEMP/openFrameworks/apps/myApps/ofxOSXBoostExample" >> "$GITHUB_ENV"
 
       - name: Build addon XCFramework
         run: ./scripts/build-boost-osx.sh

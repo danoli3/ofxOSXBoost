@@ -1,0 +1,85 @@
+name: Validate latest openFrameworks
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/openframeworks.yml'
+      - 'addon_config.mk'
+      - 'example-openframeworks/**'
+      - 'packaging/**'
+      - 'patches/**'
+      - 'scripts/build-boost-osx'
+      - 'scripts/build-boost-osx.sh'
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/openframeworks.yml'
+      - 'addon_config.mk'
+      - 'example-openframeworks/**'
+      - 'packaging/**'
+      - 'patches/**'
+      - 'scripts/build-boost-osx'
+      - 'scripts/build-boost-osx.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openframeworks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-build-link:
+    name: Project Generator, build, and link
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    env:
+      BOOST_VERSION: 1.92.0
+      OF_ROOT: ${{ runner.temp }}/openFrameworks
+      OF_PROJECT: ${{ runner.temp }}/openFrameworks/apps/myApps/ofxOSXBoostExample
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Build addon XCFramework
+        run: ./scripts/build-boost-osx.sh
+
+      - name: Check out latest openFrameworks
+        run: git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/openframeworks/openFrameworks.git "$OF_ROOT"
+
+      - name: Download latest openFrameworks libraries
+        working-directory: ${{ env.OF_ROOT }}
+        run: ./scripts/osx/download_libs.sh -t latest
+
+      - name: Build openFrameworks Project Generator
+        working-directory: ${{ env.OF_ROOT }}
+        env:
+          IDENTITY: '-'
+        run: ./apps/projectGenerator/scripts/osx/build_cmdline.sh
+
+      - name: Stage addon and example
+        run: |
+          mkdir -p "$OF_ROOT/addons/ofxOSXBoost" "$OF_PROJECT"
+          rsync -a --delete --exclude '.git' --exclude 'dist' ./ "$OF_ROOT/addons/ofxOSXBoost/"
+          rsync -a --delete example-openframeworks/ "$OF_PROJECT/"
+
+      - name: Generate openFrameworks Xcode project
+        timeout-minutes: 5
+        run: |
+          "$OF_ROOT/apps/projectGenerator/commandLine/bin/projectGenerator" \
+            -v -p osx -a ofxOSXBoost -o "$OF_ROOT" "$OF_PROJECT"
+          test -f "$OF_PROJECT/ofxOSXBoostExample.xcodeproj/project.pbxproj"
+
+      - name: Build and link openFrameworks example
+        run: |
+          xcodebuild \
+            -project "$OF_PROJECT/ofxOSXBoostExample.xcodeproj" \
+            -scheme ofxOSXBoostExample \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/ofxosxboost-of-derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          app="$RUNNER_TEMP/ofxosxboost-of-derived/Build/Products/Release/ofxOSXBoostExample.app"
+          test -x "$app/Contents/MacOS/ofxOSXBoostExample"

@@ -71,7 +71,7 @@ Copy the addon into your project's `addons/` folder. The `addon_config.mk` is al
    ```
 2. Add to **Header Search Paths** (`HEADER_SEARCH_PATHS`):
    ```
-   $(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/include
+   $(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/osx/boost.xcframework/macos-arm64_x86_64/Headers
    ```
 
 ### How to Use in a Standalone Project
@@ -83,7 +83,8 @@ find_package(ofxOSXBoost CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE ofxOSXBoost::boost)
 ```
 
-Include path is `$SRCROOT/ofxOSXBoost/libs/boost/include`; library path is `$SRCROOT/ofxOSXBoost/libs/boost/lib`.
+Headers and the universal static library are in
+`libs/boost/osx/boost.xcframework/macos-arm64_x86_64/`.
 
 **With CocoaPods:**
 

@@ -15,7 +15,7 @@
 # and the PG will write to the console the kind of error and in which line it is
 
 meta:
-	ADDON_NAME = ofxiOSBoost
+	ADDON_NAME = ofxOSXBoost
 	ADDON_DESCRIPTION = Boost C++ libraries for macOS 10.15+, distributed as a versioned XCFramework release.
 	ADDON_AUTHOR = Danoli3
 	ADDON_TAGS = "osx" "boost"
@@ -29,7 +29,7 @@ common:
 	# include search paths, this will be usually parsed from the file system
 	# but if the addon or addon libraries need special search paths they can be
 	# specified here separated by spaces or one per line using +=
-	ADDON_INCLUDES = "$(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/include"
+	ADDON_INCLUDES = libs/boost/osx/boost.xcframework/macos-arm64_x86_64/Headers
 
 	# any special flag that should be passed to the compiler when using this
 	# addon
@@ -63,4 +63,4 @@ common:
 osx:
 	# XCFramework for macOS (x86_64 + arm64) -- deploy >= 10.15
 	ADDON_LIBS =
-	ADDON_LIBS += $(SRCROOT)/../../../addons/ofxOSXBoost/libs/boost/osx/boost.xcframework
+	ADDON_LIBS += libs/boost/osx/boost.xcframework

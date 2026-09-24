@@ -78,7 +78,7 @@ jobs:
         run: |
           xcodebuild \
             -project "$OF_PROJECT/ofxOSXBoostExample.xcodeproj" \
-            -scheme ofxOSXBoostExample \
+            -scheme 'ofxOSXBoostExample Release' \
             -configuration Release \
             -destination 'platform=macOS' \
             -derivedDataPath "$RUNNER_TEMP/ofxosxboost-of-derived" \

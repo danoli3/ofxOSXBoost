@@ -63,4 +63,4 @@ common:
 osx:
 	# XCFramework for macOS (x86_64 + arm64) -- deploy >= 10.15
 	ADDON_LIBS =
-	ADDON_LIBS += libs/boost/osx/boost.xcframework
+	ADDON_LIBS += libs/boost/osx/boost.xcframework/macos-arm64_x86_64/libboost.a
